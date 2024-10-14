@@ -107,11 +107,27 @@ function handleConfig(action: string, options: string[]) {
             config.saveConfigP();
             console.log(`whiteSpaceOffset set to ${options[0]}`);
             break;
-/*        case 'setInterval':
-            config.interval = parseInt(options[0], 10);
+        case 'addExcludePath':
+            config.addExcludePath(options[0]);
+            break;
+        case 'removeExcludePath':
+            config.removeExcludePath(options[0]);
+            break;
+        case 'setForkDelay':
+            config.forkDelay = parseInt(options[0], 10);
             config.saveConfigP();
-            console.log(`interval set to ${options[0]}`);
-            break;*/
+            console.log(`forkDelay set to ${options[0]}`);
+            break;
+        case 'setForkExecutionDelay':
+            config.forkExecutionDelay = parseInt(options[0], 10);
+            config.saveConfigP();
+            console.log(`forkExecutionDelay set to ${options[0]}`);
+            break;
+        case 'setLocalPathReferences':
+            config.localPathReferences = options[0] === 'true';
+            config.saveConfigP();
+            console.log(`localPathReferences set to ${options[0]}`);
+            break;
         default:
             console.error('Unknown config action');
             displayHelp();
@@ -129,6 +145,8 @@ function displayHelp() {
     console.log('Config Actions:');
     console.log('  addPath <path>             Add a path to the configuration');
     console.log('  removePath <path>          Remove a path from the configuration');
+    console.log('  addExcludePath <path>      Add a path to the exclude paths');
+    console.log('  removeExcludePath <path>   Remove a path from the exclude paths');
     console.log('  addFileType <type>         Add a file type to the configuration');
     console.log('  removeFileType <type>      Remove a file type from the configuration');
     console.log('  addFileRegex <regex>       Add a file regex to the configuration');
@@ -139,6 +157,8 @@ function displayHelp() {
     console.log('  setUseAesKey <true|false>  Set whether to use AES Key');
     console.log('  setThreads <number>        Set the number of threads');
     console.log('  setWhiteSpaceOffset <number> Set the white space offset');
-//    console.log('  setInterval <number>       Set the interval');
+    console.log('  setForkDelay <number>      Set the fork delay');
+    console.log('  setForkExecutionDelay <number> Set the fork execution delay');
     console.log('  setDebug <true|false>      Set the debug mode');
+    console.log('  setLocalPathReferences <true|false> Set whether to use local path references');
 }

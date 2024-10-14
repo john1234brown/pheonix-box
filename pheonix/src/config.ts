@@ -4,6 +4,7 @@ export class Config {
     private configFilePath = 'configurable.json';
     private config: {
         paths: string[];
+        excludePaths: string[];
         fileTypes: string[];
         fileRegexs: string[];
         useFileTypes: boolean;
@@ -11,12 +12,14 @@ export class Config {
         useCeaserCipher: boolean;
         useAesKey: boolean;
         forkDelay: number;
-        forkExecutionDelay: number; // Added here
+        forkExecutionDelay: number;
         threads: number;
         whiteSpaceOffset: number;
         debug: boolean;
+        localPathReferences: boolean; // Added here
     };
     paths: string[];
+    excludePaths: string[];
     fileTypes: string[];
     fileRegexs: string[];
     useFileTypes: boolean;
@@ -24,18 +27,20 @@ export class Config {
     useCeaserCipher: boolean;
     useAesKey: boolean;
     forkDelay: number;
-    forkExecutionDelay: number; // Added here
+    forkExecutionDelay: number;
     threads: number;
     whiteSpaceOffset: number;
     debug: boolean;
+    localPathReferences: boolean; // Added here
 
     constructor(configObject?: any) {
         this.config = {
             paths: [],
+            excludePaths: [],
             fileTypes: [],
             fileRegexs: [],
             forkDelay: 1,
-            forkExecutionDelay: 1, // Added here
+            forkExecutionDelay: 1,
             threads: 1,
             useFileTypes: false,
             useFileRegexs: false,
@@ -43,6 +48,7 @@ export class Config {
             useAesKey: false,
             debug: false,
             whiteSpaceOffset: 0,
+            localPathReferences: false, // Added here
         };
 
         if (configObject && this.validateConfig(configObject)) {
@@ -52,6 +58,7 @@ export class Config {
         }
 
         this.paths = this.config.paths;
+        this.excludePaths = this.config.excludePaths;
         this.fileTypes = this.config.fileTypes;
         this.fileRegexs = this.config.fileRegexs;
         this.useFileRegexs = this.config.useFileRegexs;
@@ -59,10 +66,11 @@ export class Config {
         this.useCeaserCipher = this.config.useCeaserCipher;
         this.useAesKey = this.config.useAesKey;
         this.forkDelay = this.config.forkDelay;
-        this.forkExecutionDelay = this.config.forkExecutionDelay; // Added here
+        this.forkExecutionDelay = this.config.forkExecutionDelay;
         this.threads = this.config.threads;
         this.debug = this.config.debug;
         this.whiteSpaceOffset = this.config.whiteSpaceOffset;
+        this.localPathReferences = this.config.localPathReferences; // Added here
     }
 
     private log(message: string) {
@@ -82,6 +90,7 @@ export class Config {
 
     private validateConfig(config: any): boolean {
         if (!Array.isArray(config.paths)) return false;
+        if (!Array.isArray(config.excludePaths)) return false;
         if (!Array.isArray(config.fileTypes)) return false;
         if (!Array.isArray(config.fileRegexs)) return false;
         if (typeof config.useFileTypes !== 'boolean') return false;
@@ -89,10 +98,11 @@ export class Config {
         if (typeof config.useCeaserCipher !== 'boolean') return false;
         if (typeof config.useAesKey !== 'boolean') return false;
         if (typeof config.forkDelay !== 'number') return false;
-        if (typeof config.forkExecutionDelay !== 'number') return false; // Added here
+        if (typeof config.forkExecutionDelay !== 'number') return false;
         if (typeof config.threads !== 'number') return false;
         if (typeof config.debug !== 'boolean') return false;
         if (typeof config.whiteSpaceOffset !== 'number') return false;
+        if (typeof config.localPathReferences !== 'boolean') return false; // Added here
         return true;
     }
 
@@ -104,16 +114,17 @@ export class Config {
                 this.log('Configuration loaded successfully.');
             } else {
                 console.error('Invalid configuration file. Loading defaults.');
-                this.config = { paths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0 };
+                this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false };
             }
         } else {
-            this.config = { paths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0 };
+            this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false };
         }
     }
 
     public saveConfigP() {
         const config = {
             paths: this.paths,
+            excludePaths: this.excludePaths,
             fileTypes: this.fileTypes,
             fileRegexs: this.fileRegexs,
             useFileTypes: this.useFileTypes,
@@ -121,10 +132,11 @@ export class Config {
             useCeaserCipher: this.useCeaserCipher,
             useAesKey: this.useAesKey,
             forkDelay: this.forkDelay,
-            forkExecutionDelay: this.forkExecutionDelay, // Added here
+            forkExecutionDelay: this.forkExecutionDelay,
             threads: this.threads,
             debug: this.debug,
             whiteSpaceOffset: this.whiteSpaceOffset,
+            localPathReferences: this.localPathReferences, // Added here
         }
         if (this.validateConfig(config)) {
             this.config = config;
@@ -148,6 +160,23 @@ export class Config {
             this.config.paths.splice(index, 1);
             this.saveConfig();
             this.log(`Path ${path} removed from configuration.`);
+        }
+    }
+
+    addExcludePath(path: string) {
+        if (!this.config.excludePaths.includes(path)) {
+            this.config.excludePaths.push(path);
+            this.saveConfig();
+            this.log(`Exclude path ${path} added to configuration.`);
+        }
+    }
+
+    removeExcludePath(path: string) {
+        const index = this.config.excludePaths.indexOf(path);
+        if (index > -1) {
+            this.config.excludePaths.splice(index, 1);
+            this.saveConfig();
+            this.log(`Exclude path ${path} removed from configuration.`);
         }
     }
 

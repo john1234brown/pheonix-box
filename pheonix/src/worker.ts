@@ -10,6 +10,7 @@ interface Config {
     fileTypes?: string[];
     useFileRegexs?: boolean;
     fileRegexs?: string[];
+    excludePaths?: string[];
 }
 
 interface FileHashes {
@@ -50,15 +51,20 @@ class JohnsWorker {
         this.log('Encrypting text...');
         const caesarEncrypted = text.split('').map(char => {
             const index = this.cipherKey.indexOf(char);
-            return index === -1 ? char : this.shuffledKey[index];
+            if (index === -1) {
+                return char;
+            }
+            return this.shuffledKey[index];
         }).join('');
 
         if (this.config.useAesKey && this.aesKey) {
-            const cipher = crypto.createCipheriv('aes-256-cbc', this.aesKey, Buffer.alloc(16, 0));
+            const iv = crypto.randomBytes(16); // Initialization vector
+            const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(this.aesKey), iv);
             let encrypted = cipher.update(caesarEncrypted, 'utf8', 'hex');
             encrypted += cipher.final('hex');
-            this.log('Encrypted text with AES:', encrypted);
-            return encrypted;
+            const encryptedWithIv = iv.toString('hex') + ':' + encrypted;
+            this.log('Encrypted text with AES:', encryptedWithIv);
+            return encryptedWithIv;
         }
 
         this.log('Encrypted text with Caesar cipher:', caesarEncrypted);
@@ -68,18 +74,32 @@ class JohnsWorker {
     private decrypt(text: string): string {
         this.log('Decrypting text...');
         let decrypted = text;
-
+    
         if (this.config.useAesKey && this.aesKey) {
-            const decipher = crypto.createDecipheriv('aes-256-cbc', this.aesKey, Buffer.alloc(16, 0));
-            decrypted = decipher.update(text, 'hex', 'utf8');
+            const textParts = text.split(':');
+            if (textParts.length < 2) {
+                throw new Error('Invalid encrypted text format');
+            }
+    
+            const iv = Buffer.from(textParts.shift()!, 'hex');
+            if (iv.length !== 16) { // AES-256-CBC requires a 16-byte IV
+                throw new Error('Invalid initialization vector length');
+            }
+    
+            const encryptedText = textParts.join(':');
+            const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(this.aesKey), iv);
+            decrypted = decipher.update(encryptedText, 'hex', 'utf8');
             decrypted += decipher.final('utf8');
         }
-
+    
         const caesarDecrypted = decrypted.split('').map(char => {
             const index = this.shuffledKey.indexOf(char);
-            return index === -1 ? char : this.cipherKey[index];
+            if (index === -1) {
+                return char;
+            }
+            return this.cipherKey[index];
         }).join('');
-
+    
         this.log('Decrypted text with Caesar cipher:', caesarDecrypted);
         return caesarDecrypted;
     }
@@ -106,16 +126,17 @@ class JohnsWorker {
         if (this.shouldProcessFile(filePath)) {
             const fileContent = fs.readFileSync(filePath, 'utf-8');
             const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
-
-            const storedHash = this.config.useCeaserCipher ? this.decrypt(this.fileHashes[filePath]) : this.fileHashes[filePath];
-            const storedContent = this.config.useCeaserCipher ? this.decrypt(this.fileContents[filePath]) : this.fileContents[filePath];
-
-            if (!storedHash) {
-                this.fileHashes[filePath] = this.config.useCeaserCipher ? this.encrypt(fileHash) : fileHash;
-                this.fileContents[filePath] = this.config.useCeaserCipher ? this.encrypt(fileContent) : fileContent;
-            } else if (storedHash !== fileHash) {
-                this.log(`File hash mismatch for ${filePath}. Replacing content with stored content.`);
-                fs.writeFileSync(filePath, storedContent, 'utf-8');
+            if (this.fileHashes[filePath] !== undefined && this.fileContents[filePath] !== undefined) {
+                const storedHash = this.config.useCeaserCipher ? this.decrypt(this.fileHashes[filePath]) : this.fileHashes[filePath];
+                const storedContent = this.config.useCeaserCipher ? this.decrypt(this.fileContents[filePath]) : this.fileContents[filePath];
+                if (!storedHash) {
+                    this.fileHashes[filePath] = this.config.useCeaserCipher ? this.encrypt(fileHash) : fileHash;
+                    this.fileContents[filePath] = this.config.useCeaserCipher ? this.encrypt(fileContent) : fileContent;
+                } else if (storedHash !== fileHash) {
+                    this.log(`File hash mismatch for ${filePath}. Replacing content with stored content. , ${storedContent} \n, ${fileContent}`);
+                    fs.writeFileSync(filePath, storedContent, 'utf-8');
+                }
+            }else{
                 this.fileHashes[filePath] = this.config.useCeaserCipher ? this.encrypt(fileHash) : fileHash;
                 this.fileContents[filePath] = this.config.useCeaserCipher ? this.encrypt(fileContent) : fileContent;
             }
@@ -124,6 +145,12 @@ class JohnsWorker {
 
     private shouldProcessFile(filePath: string): boolean {
         this.log('Checking if file should be processed:', filePath);
+
+        if (this.config.excludePaths?.some(excludePath => filePath.startsWith(excludePath))) {
+            this.log(`File ${filePath} is excluded from processing.`);
+            return false;
+        }
+
         if (this.config.useFileTypes) {
             const fileExtension = path.extname(filePath);
             if (!this.config.fileTypes?.includes(fileExtension)) {

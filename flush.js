@@ -43,7 +43,7 @@ class FlushPlugin {
         const directoriesToRemove = [
           './pheonix/node_modules/',
           './pheonix/.webpack_cache/',
-          './pheonix/production/',
+          //'./pheonix/production/',
           './node_modules'
         ];
 

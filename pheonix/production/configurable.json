@@ -1,0 +1,18 @@
+{
+  "paths": [
+    "Test"
+  ],
+  "excludePaths": [],
+  "fileTypes": [],
+  "fileRegexs": [],
+  "useFileTypes": false,
+  "useFileRegexs": false,
+  "useCeaserCipher": true,
+  "useAesKey": true,
+  "forkDelay": 1000,
+  "forkExecutionDelay": 1000,
+  "threads": 2,
+  "debug": true,
+  "whiteSpaceOffset": 0,
+  "localPathReferences": true
+}

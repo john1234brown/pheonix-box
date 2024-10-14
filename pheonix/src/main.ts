@@ -3,7 +3,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as sea from 'node:sea'; // Assuming 'sea' is a module for handling sea assets
-import { generateSafeUtf8Characters } from './char';
+import { generateSafeUtf8Characters, generateSafeUtf8CharactersForAES } from './char';
 import JohnsWorker from './worker'; // Import the Worker class from worker.ts
 import cluster from 'cluster';
 import * as os from 'os';
@@ -34,8 +34,9 @@ export class JohnsPheonixBox {
         console.log('This loaded:', this.loaded);
         if (this.loaded === false) {
             this.safeAsciiCharacters = generateSafeUtf8Characters(this.config.whiteSpaceOffset);
+//            if (this.config.useAesKey)this.safeAsciiCharacters = generateSafeUtf8CharactersForAES(this.config.whiteSpaceOffset);
             this.cipherKey = this.generateCipherKey();
-            this.shuffledKey = this.shuffleKey(this.cipherKey);
+            this.shuffledKey = this.cipherKey;
             if (this.config.useAesKey) {
                 this.aesKey = crypto.randomBytes(32); // Use 256-bit key size
             }
@@ -107,8 +108,7 @@ export class JohnsPheonixBox {
             if (numCPUs > this.config.threads) numCPUs = this.config.threads; // If configurations for threads is lower than the numCpu threads use that!
             const fileList = this.getFileList();
             const chunkSize = Math.ceil(fileList.length / numCPUs);
-
-            this.log(`Master ${process.pid} is running`);
+            this.log(`Master ${process.pid} is running, using ${numCPUs} threads with chunk size ${chunkSize}`);
             
             // Fork workers.
             let i = 0;
@@ -116,7 +116,7 @@ export class JohnsPheonixBox {
                 if (i < numCPUs) {
                     const chunk = fileList.slice(i * chunkSize, (i + 1) * chunkSize);
                     const worker = cluster.fork();
-
+                
                     worker.on('message', (message) => {
                         if (message.type === 'result') {
                             this.log(`Master received result from worker ${worker.process.pid}`);
@@ -124,17 +124,18 @@ export class JohnsPheonixBox {
                             Object.assign(this.fileContents, message.fileContents);
                         }
                     });
-
+                
                     worker.send({ type: 'start', chunk, config: this.config, cipherKey: this.cipherKey, shuffledKey: this.shuffledKey, aesKey: this.aesKey, loaded: this.loaded, fileHashes: this.fileHashes, fileContents: this.fileContents });
                     i++;
                     setTimeout(forkWorker, this.config.forkDelay || 100); // Add a configurable delay between forks
                 }
             };
-
-            forkWorker();
-
+            while(i<numCPUs){
+                forkWorker();
+            }
             cluster.on('exit', (worker, code, signal) => {
                 this.log(`Worker ${worker.process.pid} died`);
+                i = i - 1;
             });
 
         }
@@ -143,16 +144,25 @@ export class JohnsPheonixBox {
     private getFileList(): string[] {
         this.log('Generating file list...');
         const fileList: string[] = [];
+        const excludePaths = this.config.excludePaths || [];
+
         this.config.paths.forEach((filePath: string) => {
+            if (this.config.localPathReferences) {
+                filePath = path.join(__dirname, filePath);
+            }
             if (fs.existsSync(filePath)) {
                 const stat = fs.statSync(filePath);
                 if (stat.isDirectory()) {
                     fs.readdirSync(filePath).forEach(file => {
                         const fullPath = path.join(filePath, file);
-                        fileList.push(fullPath);
+                        if (!excludePaths.includes(fullPath)) {
+                            fileList.push(fullPath);
+                        }
                     });
                 } else {
-                    fileList.push(filePath);
+                    if (!excludePaths.includes(filePath)) {
+                        fileList.push(filePath);
+                    }
                 }
             }
         });

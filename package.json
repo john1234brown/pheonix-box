@@ -1,0 +1,24 @@
+{
+  "name": "johnnykins-webpack-local-github-project",
+  "author": "https://github.com/john1234brown",
+  "license": "Apache-2.0",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "github": "webpack --config webpack-local-github-workspace.config.js",
+    "flush:webpack": "webpack --config webpack-flush.config.js",
+    "watch": "cd workspace && webpack --watch"
+  },
+  "dependencies": {
+    "fs-extra": "^11.2.0",
+    "seedrandom": "^3.0.5"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/seedrandom": "^3.0.8",
+    "prettier": "^3.3.3",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "description": "Johnathan Edward Brown webpack project example for easier building and flushing of project to replace my scripts! for easier cross os usage! Along with ability to push to local github folder space for updating github repo! more easily in a configurable manner!"
+}

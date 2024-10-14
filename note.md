@@ -1,0 +1,1 @@
+How can we optimize this where we can make it like a Class Object That is the Worker for the PheonixBox which can be spawned in a worker thread without needing a script t execute rather simply passing this worker Object class to this worker thread to execute for safer execution style!

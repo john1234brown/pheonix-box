@@ -3,6 +3,27 @@
 // Last Modified: 2024-10-13
 import { Config } from './config';
 import { JohnsPheonixBox } from './main';
+import cluster from 'cluster';
+import JohnsWorker from './worker';
+export const clusterLock = { clusterLock: false};
+if (cluster.isWorker) {
+    // If this is a worker process, do nothing and return early
+    console.log(`Worker ${process.pid} is running`);
+    clusterLock.clusterLock = true;
+    process.on('message', async (message) => {
+        const msg = message as { type: string, chunk: string[], config: Config, cipherKey: string, shuffledKey: string, aesKey: Buffer | null, loaded: boolean, fileHashes: { [key: string]: string }, fileContents: { [key: string]: string } };
+        if (msg.type === 'start') {
+            console.log('Starting worker process...');
+            const { chunk, config, cipherKey, shuffledKey, aesKey, loaded, fileHashes, fileContents } = message as { chunk: string[], config: Config, cipherKey: string, shuffledKey: string, aesKey: Buffer | null, loaded: boolean, fileHashes: { [key: string]: string }, fileContents: { [key: string]: string } };
+            const worker = new JohnsWorker(config, chunk, {}, cipherKey, shuffledKey, aesKey || Buffer.alloc(0), loaded, fileHashes, fileContents);
+            while (true) {
+                const result = await worker.processFiles(chunk, {});
+                if (process.send) process.send({ type: 'result', fileHashes: result.fileHashes, fileContents: result.fileContents });
+                await new Promise(resolve => setTimeout(resolve, config.forkExecutionDelay || 1000)); // Add a configurable delay between executions
+            }
+        }
+    });
+}
 
 const args = process.argv.slice(2);
 
@@ -14,14 +35,15 @@ if (args.length < 1 || args[0] === 'help') {
 const command = args[0];
 const action = args[1];
 
-const johnsPheonixBox = new JohnsPheonixBox();
-
 switch (command) {
     case 'config':
         handleConfig(action, args.slice(2));
         break;
     case 'start':
-        johnsPheonixBox.startProcess();
+        if (clusterLock.clusterLock === false){
+            const johnsPheonixBox = new JohnsPheonixBox();
+            johnsPheonixBox.startProcess(); //Prevent dual executions from cluster modules!
+        }
         break;
     default:
         console.error('Unknown command');
@@ -75,16 +97,21 @@ function handleConfig(action: string, options: string[]) {
             config.saveConfigP();
             console.log(`threads set to ${options[0]}`);
             break;
-        case 'setInterval':
-            config.interval = parseInt(options[0], 10);
-            config.saveConfigP();
-            console.log(`interval set to ${options[0]}`);
-            break;
         case 'setDebug':
             config.debug = options[0] === 'true';
             config.saveConfigP();
             console.log(`debug set to ${options[0]}`);
             break;
+        case 'setWhiteSpaceOffset':
+            config.whiteSpaceOffset = parseInt(options[0], 10);
+            config.saveConfigP();
+            console.log(`whiteSpaceOffset set to ${options[0]}`);
+            break;
+/*        case 'setInterval':
+            config.interval = parseInt(options[0], 10);
+            config.saveConfigP();
+            console.log(`interval set to ${options[0]}`);
+            break;*/
         default:
             console.error('Unknown config action');
             displayHelp();
@@ -111,6 +138,7 @@ function displayHelp() {
     console.log('  setUseCeaserCipher <true|false> Set whether to use Ceaser Cipher');
     console.log('  setUseAesKey <true|false>  Set whether to use AES Key');
     console.log('  setThreads <number>        Set the number of threads');
-    console.log('  setInterval <number>       Set the interval');
+    console.log('  setWhiteSpaceOffset <number> Set the white space offset');
+//    console.log('  setInterval <number>       Set the interval');
     console.log('  setDebug <true|false>      Set the debug mode');
 }

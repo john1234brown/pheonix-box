@@ -10,9 +10,11 @@ export class Config {
         useFileRegexs: boolean;
         useCeaserCipher: boolean;
         useAesKey: boolean;
-        interval: number;
+        forkDelay: number;
+        forkExecutionDelay: number; // Added here
         threads: number;
-        debug: boolean; // New property for debug flag
+        whiteSpaceOffset: number;
+        debug: boolean;
     };
     paths: string[];
     fileTypes: string[];
@@ -21,22 +23,26 @@ export class Config {
     useFileRegexs: boolean;
     useCeaserCipher: boolean;
     useAesKey: boolean;
-    interval: number;
+    forkDelay: number;
+    forkExecutionDelay: number; // Added here
     threads: number;
-    debug: boolean; // New property for debug flag
+    whiteSpaceOffset: number;
+    debug: boolean;
 
     constructor(configObject?: any) {
         this.config = {
             paths: [],
             fileTypes: [],
             fileRegexs: [],
-            interval: 1,
+            forkDelay: 1,
+            forkExecutionDelay: 1, // Added here
             threads: 1,
             useFileTypes: false,
             useFileRegexs: false,
             useCeaserCipher: false,
             useAesKey: false,
-            debug: false, // Default debug flag
+            debug: false,
+            whiteSpaceOffset: 0,
         };
 
         if (configObject && this.validateConfig(configObject)) {
@@ -52,9 +58,11 @@ export class Config {
         this.useFileTypes = this.config.useFileTypes;
         this.useCeaserCipher = this.config.useCeaserCipher;
         this.useAesKey = this.config.useAesKey;
-        this.interval = this.config.interval;
+        this.forkDelay = this.config.forkDelay;
+        this.forkExecutionDelay = this.config.forkExecutionDelay; // Added here
         this.threads = this.config.threads;
         this.debug = this.config.debug;
+        this.whiteSpaceOffset = this.config.whiteSpaceOffset;
     }
 
     private log(message: string) {
@@ -80,9 +88,11 @@ export class Config {
         if (typeof config.useFileRegexs !== 'boolean') return false;
         if (typeof config.useCeaserCipher !== 'boolean') return false;
         if (typeof config.useAesKey !== 'boolean') return false;
-        if (typeof config.interval !== 'number') return false;
+        if (typeof config.forkDelay !== 'number') return false;
+        if (typeof config.forkExecutionDelay !== 'number') return false; // Added here
         if (typeof config.threads !== 'number') return false;
-        if (typeof config.debug !== 'boolean') return false; // Validate debug flag
+        if (typeof config.debug !== 'boolean') return false;
+        if (typeof config.whiteSpaceOffset !== 'number') return false;
         return true;
     }
 
@@ -94,10 +104,10 @@ export class Config {
                 this.log('Configuration loaded successfully.');
             } else {
                 console.error('Invalid configuration file. Loading defaults.');
-                this.config = { paths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, interval: 1, threads: 1 };
+                this.config = { paths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0 };
             }
         } else {
-            this.config = { paths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, interval: 1, threads: 1 };
+            this.config = { paths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0 };
         }
     }
 
@@ -110,9 +120,11 @@ export class Config {
             useFileRegexs: this.useFileRegexs,
             useCeaserCipher: this.useCeaserCipher,
             useAesKey: this.useAesKey,
-            interval: this.interval,
+            forkDelay: this.forkDelay,
+            forkExecutionDelay: this.forkExecutionDelay, // Added here
             threads: this.threads,
             debug: this.debug,
+            whiteSpaceOffset: this.whiteSpaceOffset,
         }
         if (this.validateConfig(config)) {
             this.config = config;
@@ -173,5 +185,5 @@ export class Config {
         }
     }
 
-    // Add similar methods for interval, and threads
+    // Add similar methods for threads
 }

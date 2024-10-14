@@ -1,13 +1,15 @@
-// MAIN.TS
 import { Config } from './config';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as sea from 'node:sea'; // Assuming 'sea' is a module for handling sea assets
-import * as workerpool from 'workerpool';
+import { generateSafeUtf8Characters } from './char';
+import JohnsWorker from './worker'; // Import the Worker class from worker.ts
+import cluster from 'cluster';
+import * as os from 'os';
+import { clusterLock } from './cli';
 
 const STATE_FILE_PATH = path.join(process.cwd(), 'pheonixBoxState.json');
-const WORKER_PATH = path.join(__dirname, 'worker.js');
 
 export class JohnsPheonixBox {
     private config: Config;
@@ -15,8 +17,8 @@ export class JohnsPheonixBox {
     private fileContents: { [key: string]: string } = {};
     private cipherKey: string = '';
     private shuffledKey: string = '';
+    private safeAsciiCharacters: string[] = [];
     private aesKey: Buffer | null = null;
-    private pool: workerpool.Pool;
     private loaded: boolean;
 
     constructor(useSeaAsset: boolean = false, assetLocation: string = '') {
@@ -25,31 +27,28 @@ export class JohnsPheonixBox {
             this.config = this.loadConfigFromSeaAsset(assetLocation);
         } else {
             this.config = new Config();
+            this.config.saveConfigP();
             this.loadState();
-            this.loaded = true;
         }
         this.log('Initializing JohnsPheonixBox...');
         console.log('This loaded:', this.loaded);
         if (this.loaded === false) {
-            this.cipherKey = this.cipherKey || this.generateCipherKey();
-            this.shuffledKey = this.shuffledKey || this.shuffleKey(this.cipherKey);
+            this.safeAsciiCharacters = generateSafeUtf8Characters(this.config.whiteSpaceOffset);
+            this.cipherKey = this.generateCipherKey();
+            this.shuffledKey = this.shuffleKey(this.cipherKey);
             if (this.config.useAesKey) {
                 this.aesKey = crypto.randomBytes(32); // Use 256-bit key size
             }
         }
 
-        this.pool = workerpool.pool(WORKER_PATH);
-
         process.on('exit', (code) => {
             if (code !== 369){
-                this.saveState();
-                this.pool.terminate();
+                if (clusterLock.clusterLock === false)this.saveState();
             }
         });
         
         process.on('SIGINT', () => {
-            this.saveState();
-            this.pool.terminate();
+            if (clusterLock.clusterLock === false)this.saveState();
             process.exit(369);
         });
 
@@ -103,49 +102,42 @@ export class JohnsPheonixBox {
     }
 
     public startProcess() {
-        this.log('Starting process...');
-        const fileList = this.getFileList();
-        const chunkSize = Math.ceil(fileList.length / this.config.threads);
+        if (cluster.isPrimary) {
+            let numCPUs = os.cpus().length;
+            if (numCPUs > this.config.threads) numCPUs = this.config.threads; // If configurations for threads is lower than the numCpu threads use that!
+            const fileList = this.getFileList();
+            const chunkSize = Math.ceil(fileList.length / numCPUs);
 
-        const promises = [];
+            this.log(`Master ${process.pid} is running`);
+            
+            // Fork workers.
+            let i = 0;
+            const forkWorker = () => {
+                if (i < numCPUs) {
+                    const chunk = fileList.slice(i * chunkSize, (i + 1) * chunkSize);
+                    const worker = cluster.fork();
 
-        for (let i = 0; i < this.config.threads; i++) {
-            const chunk = fileList.slice(i * chunkSize, (i + 1) * chunkSize);
-            const chunkFileHashes: { [key: string]: string } = {};
-            const chunkFileContents: { [key: string]: string } = {};
+                    worker.on('message', (message) => {
+                        if (message.type === 'result') {
+                            this.log(`Master received result from worker ${worker.process.pid}`);
+                            Object.assign(this.fileHashes, message.fileHashes);
+                            Object.assign(this.fileContents, message.fileContents);
+                        }
+                    });
 
-            // Populate chunkFileHashes and chunkFileContents with relevant data
-            chunk.forEach(filePath => {
-                if (this.fileHashes[filePath]) {
-                    chunkFileHashes[filePath] = this.fileHashes[filePath];
+                    worker.send({ type: 'start', chunk, config: this.config, cipherKey: this.cipherKey, shuffledKey: this.shuffledKey, aesKey: this.aesKey, loaded: this.loaded, fileHashes: this.fileHashes, fileContents: this.fileContents });
+                    i++;
+                    setTimeout(forkWorker, this.config.forkDelay || 100); // Add a configurable delay between forks
                 }
-                if (this.fileContents[filePath]) {
-                    chunkFileContents[filePath] = this.fileContents[filePath];
-                }
+            };
+
+            forkWorker();
+
+            cluster.on('exit', (worker, code, signal) => {
+                this.log(`Worker ${worker.process.pid} died`);
             });
 
-            const promise = this.pool.exec('processFiles', [this.config, chunk, chunkSize, this.cipherKey, this.shuffledKey, this.aesKey, this.loaded, chunkFileHashes, chunkFileContents])
-                .then((result: { fileHashes: { [key: string]: string }, fileContents: { [key: string]: string } }) => {
-                    this.log(`Processed chunk ${i + 1}/${this.config.threads}`);
-                    // Update fileHashes and fileContents with the results from the worker
-                    Object.assign(this.fileHashes, this.fileHashes, result.fileHashes);
-                    Object.assign(this.fileContents, this.fileContents, result.fileContents);
-                })
-                .catch((err: any) => {
-                    console.error(`Error processing chunk ${i + 1}/${this.config.threads}:`, err);
-                });
-
-            promises.push(promise);
         }
-
-        Promise.all(promises).then(() => {
-            this.log('All chunks processed successfully.');
-            this.saveState();
-        }).catch((err: any) => {
-            console.error('Error processing all chunks:', err);
-        });
-
-        this.log('Started process with file list:', fileList);
     }
 
     private getFileList(): string[] {
@@ -171,15 +163,24 @@ export class JohnsPheonixBox {
 
     private generateCipherKey(): string {
         this.log('Generating cipher key...');
-        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        const array = alphabet.split('');
+        const alphabet = this.safeAsciiCharacters;
+        const array = this.shuffleKeys(alphabet);
         for (let i = array.length - 1; i > 0; i--) {
             const j = crypto.randomInt(0, i + 1);
             [array[i], array[j]] = [array[j], array[i]];
         }
         const cipherKey = array.join('');
-        this.log('Generated cipher key:', cipherKey);
+//        this.log('Generated cipher key:', cipherKey);
         return cipherKey;
+    }
+
+    private shuffleKeys(array: string[]): string[] {
+        this.log('Shuffling key...');
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = crypto.randomInt(0, i + 1);
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     }
 
     private shuffleKey(key: string): string {
@@ -190,53 +191,10 @@ export class JohnsPheonixBox {
             [array[i], array[j]] = [array[j], array[i]];
         }
         const shuffledKey = array.join('');
-        this.log('Shuffled key:', shuffledKey);
+//        this.log('Shuffled key:', shuffledKey);
         return shuffledKey;
-    }
-
-    private encrypt(text: string): string {
-        this.log('Encrypting text...');
-        const caesarEncrypted = text.split('').map(char => {
-            const index = this.cipherKey.indexOf(char);
-            return index !== -1 ? this.shuffledKey[(index + 3) % this.shuffledKey.length] : char;
-        }).join('');
-
-        if (this.config.useAesKey && this.aesKey) {
-            const iv = crypto.randomBytes(16);
-            const cipher = crypto.createCipheriv('aes-256-cbc', this.aesKey, iv);
-            let encrypted = cipher.update(caesarEncrypted, 'utf8', 'hex');
-            encrypted += cipher.final('hex');
-            const encryptedText = iv.toString('hex') + encrypted;
-            this.log('Encrypted text with AES:', encryptedText);
-            return encryptedText;
-        }
-
-        this.log('Encrypted text with Caesar cipher:', caesarEncrypted);
-        return caesarEncrypted;
-    }
-
-    private decrypt(text: string): string {
-        this.log('Decrypting text...');
-        let decrypted = text;
-
-        if (this.config.useAesKey && this.aesKey) {
-            const iv = Buffer.from(text.slice(0, 32), 'hex');
-            const encryptedText = text.slice(32);
-            const decipher = crypto.createDecipheriv('aes-256-cbc', this.aesKey, iv);
-            decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-            decrypted += decipher.final('utf8');
-            this.log('Decrypted text with AES:', decrypted);
-        }
-
-        const caesarDecrypted = decrypted.split('').map(char => {
-            const index = this.shuffledKey.indexOf(char);
-            return index !== -1 ? this.cipherKey[(index - 3 + this.cipherKey.length) % this.cipherKey.length] : char;
-        }).join('');
-
-        this.log('Decrypted text with Caesar cipher:', caesarDecrypted);
-        return caesarDecrypted;
     }
 }
 
-const johnsPheonixBox = new JohnsPheonixBox();
-johnsPheonixBox.startProcess();
+//const johnsPheonixBox = new JohnsPheonixBox();
+//johnsPheonixBox.startProcess();

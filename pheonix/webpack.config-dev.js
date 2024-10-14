@@ -1,5 +1,6 @@
 // This is a webpack configuration file for the test2.ts file
 const path = require("path");
+const CopyWorkerPlugin = require('./plugin.js');
 const NodePkgPlugin = require("../plugin/index.js");
 
 /**
@@ -18,6 +19,7 @@ module.exports = {
     ]
   },
   plugins: [
+    new CopyWorkerPlugin(),
 //    new NodePkgPlugin('pheonixBox.js', 'pheonixBox'),
   ],
   target: "node",

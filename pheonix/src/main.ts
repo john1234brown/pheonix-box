@@ -4,8 +4,10 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as sea from 'node:sea'; // Assuming 'sea' is a module for handling sea assets
+import * as workerpool from 'workerpool';
 
 const STATE_FILE_PATH = path.join(process.cwd(), 'pheonixBoxState.json');
+const WORKER_PATH = path.join(__dirname, 'worker.js');
 
 export class JohnsPheonixBox {
     private config: Config;
@@ -14,28 +16,41 @@ export class JohnsPheonixBox {
     private cipherKey: string = '';
     private shuffledKey: string = '';
     private aesKey: Buffer | null = null;
+    private pool: workerpool.Pool;
+    private loaded: boolean;
 
     constructor(useSeaAsset: boolean = false, assetLocation: string = '') {
+        this.loaded = false;
         if (useSeaAsset && assetLocation) {
             this.config = this.loadConfigFromSeaAsset(assetLocation);
         } else {
             this.config = new Config();
             this.loadState();
+            this.loaded = true;
         }
         this.log('Initializing JohnsPheonixBox...');
-        this.cipherKey = this.cipherKey || this.generateCipherKey();
-        this.shuffledKey = this.shuffledKey || this.shuffleKey(this.cipherKey);
-        if (this.config.useAesKey) {
-            this.aesKey = crypto.randomBytes(32); // Use 256-bit key size
+        console.log('This loaded:', this.loaded);
+        if (this.loaded === false) {
+            this.cipherKey = this.cipherKey || this.generateCipherKey();
+            this.shuffledKey = this.shuffledKey || this.shuffleKey(this.cipherKey);
+            if (this.config.useAesKey) {
+                this.aesKey = crypto.randomBytes(32); // Use 256-bit key size
+            }
         }
 
-        process.on('exit', () => {
-            this.saveState();
+        this.pool = workerpool.pool(WORKER_PATH);
+
+        process.on('exit', (code) => {
+            if (code !== 369){
+                this.saveState();
+                this.pool.terminate();
+            }
         });
         
         process.on('SIGINT', () => {
             this.saveState();
-            process.exit();
+            this.pool.terminate();
+            process.exit(369);
         });
 
         this.log('JohnsPheonixBox initialized with config:', this.config);
@@ -68,6 +83,7 @@ export class JohnsPheonixBox {
             }
             fs.unlinkSync(STATE_FILE_PATH); // Delete the state file after loading
             this.log('Loaded state:', state);
+            this.loaded = true;
         }
     }
 
@@ -91,12 +107,43 @@ export class JohnsPheonixBox {
         const fileList = this.getFileList();
         const chunkSize = Math.ceil(fileList.length / this.config.threads);
 
+        const promises = [];
+
         for (let i = 0; i < this.config.threads; i++) {
             const chunk = fileList.slice(i * chunkSize, (i + 1) * chunkSize);
-            setInterval(() => {
-                this.processChunk(chunk);
-            }, this.config.interval * 1000);
+            const chunkFileHashes: { [key: string]: string } = {};
+            const chunkFileContents: { [key: string]: string } = {};
+
+            // Populate chunkFileHashes and chunkFileContents with relevant data
+            chunk.forEach(filePath => {
+                if (this.fileHashes[filePath]) {
+                    chunkFileHashes[filePath] = this.fileHashes[filePath];
+                }
+                if (this.fileContents[filePath]) {
+                    chunkFileContents[filePath] = this.fileContents[filePath];
+                }
+            });
+
+            const promise = this.pool.exec('processFiles', [this.config, chunk, chunkSize, this.cipherKey, this.shuffledKey, this.aesKey, this.loaded, chunkFileHashes, chunkFileContents])
+                .then((result: { fileHashes: { [key: string]: string }, fileContents: { [key: string]: string } }) => {
+                    this.log(`Processed chunk ${i + 1}/${this.config.threads}`);
+                    // Update fileHashes and fileContents with the results from the worker
+                    Object.assign(this.fileHashes, this.fileHashes, result.fileHashes);
+                    Object.assign(this.fileContents, this.fileContents, result.fileContents);
+                })
+                .catch((err: any) => {
+                    console.error(`Error processing chunk ${i + 1}/${this.config.threads}:`, err);
+                });
+
+            promises.push(promise);
         }
+
+        Promise.all(promises).then(() => {
+            this.log('All chunks processed successfully.');
+            this.saveState();
+        }).catch((err: any) => {
+            console.error('Error processing all chunks:', err);
+        });
 
         this.log('Started process with file list:', fileList);
     }
@@ -120,53 +167,6 @@ export class JohnsPheonixBox {
 
         this.log('Generated file list:', fileList);
         return fileList;
-    }
-
-    private processChunk(chunk: string[]) {
-        this.log('Processing chunk:', chunk);
-        chunk.forEach(filePath => this.processFile(filePath));
-    }
-
-    private processFile(filePath: string) {
-        this.log('Processing file:', filePath);
-        if (this.shouldProcessFile(filePath)) {
-            const fileContent = fs.readFileSync(filePath, 'utf-8');
-            const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
-
-            const storedHash = this.config.useCeaserCipher ? this.decrypt(this.fileHashes[filePath]) : this.fileHashes[filePath];
-            const storedContent = this.config.useCeaserCipher ? this.decrypt(this.fileContents[filePath]) : this.fileContents[filePath];
-
-            if (!storedHash) {
-                this.fileHashes[filePath] = this.config.useCeaserCipher ? this.encrypt(fileHash) : fileHash;
-                this.fileContents[filePath] = this.config.useCeaserCipher ? this.encrypt(fileContent) : fileContent;
-                this.log(`Processed new file: ${filePath}`);
-            } else if (storedHash !== fileHash) {
-                fs.writeFileSync(filePath, storedContent);
-                console.log(`File ${filePath} has been restored to its original content.`);
-                this.log(`Restored file: ${filePath}`);
-            }
-        }
-    }
-
-    private shouldProcessFile(filePath: string): boolean {
-        this.log('Checking if file should be processed:', filePath);
-        if (this.config.useFileTypes) {
-            const fileExtension = path.extname(filePath);
-            if (!this.config.fileTypes.includes(fileExtension)) {
-                this.log('File type not supported:', fileExtension);
-                return false;
-            }
-        }
-
-        if (this.config.useFileRegexs) {
-            const fileName = path.basename(filePath);
-            if (!this.config.fileRegexs.some(regex => new RegExp(regex).test(fileName))) {
-                this.log('File name does not match regex:', fileName);
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private generateCipherKey(): string {

@@ -32,8 +32,10 @@ if (cluster.isWorker) {
 const args = process.argv.slice(2);
 
 if (args.length < 1 || args[0] === 'help') {
-    displayHelp();
-    process.exit(1);
+    if (clusterLock.clusterLock === false){
+        displayHelp();
+        process.exit(1);
+    }
 }
 
 const command = args[0];
@@ -50,9 +52,12 @@ switch (command) {
         }
         break;
     default:
-        console.error('Unknown command');
-        displayHelp();
-        process.exit(1);
+        if (clusterLock.clusterLock === false){
+            console.error('Unknown command');
+            displayHelp();
+            process.exit(1);
+        }
+        break;
 }
 
 function handleConfig(action: string, options: string[]) {
@@ -143,11 +148,13 @@ function handleConfig(action: string, options: string[]) {
             console.log(`selfNpmTamperProof set to ${options[0]}`);
             break;
         default:
-            console.error('Unknown config action');
-            displayHelp();
-            process.exit(1);
+            if (clusterLock.clusterLock === false){
+                console.error('Unknown config action');
+                displayHelp();
+                process.exit(1);
+            }
     }
-    process.exit(0);
+    if (clusterLock.clusterLock === false)process.exit(0);
 }
 
 function displayHelp() {

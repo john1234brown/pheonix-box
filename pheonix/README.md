@@ -1,6 +1,6 @@
 # Pheonix Box CLI
 
-Pheonix Box CLI is a TypeScript project that is compiled, bundled with Webpack, and obfuscated into a binary. It provides a robust solution for managing and processing files with encryption and hashing capabilities.
+Pheonix Box CLI is a TypeScript project that is compiled, bundled with Webpack, and obfuscated into a binary. It provides a robust tamper proof solution for managing and processing files with encryption and hashing capabilities.
 
 ## Table of Contents
 
@@ -136,4 +136,4 @@ By following this guide, you can effectively manage and customize the configurat
 
 ## License
 
-This project is licensed under the GPL-3.0-only License. See the [LICENSE](../LICENSE) file for details.
+This project is licensed under the X11 License. See the [LICENSE](../LICENSE) file for details.

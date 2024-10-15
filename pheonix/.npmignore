@@ -1,10 +1,18 @@
-# Exclude binaries compiled by the webpack plugin
 production/node-linux
 production/node-macos
 production/node-win
 production/pheonixBox-linux
 production/pheonixBox-macos
 production/pheonixBox-win
+production/pheonixBox-linux-hash.txt
+production/pheonixBox-macos-hash.txt
+production/pheonixBox-win-hash.txt
+production/hash.txt
+production/configurable.json
+production/sea-config.json
+production/sea-prep.blob
 production/*.exe
 production/*.bin
 production/Test/**
+node_modules/**
+.webpack_cache/**

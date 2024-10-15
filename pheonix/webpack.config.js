@@ -2,12 +2,13 @@
 const path = require("path");
 const NodePkgPlugin = require("../plugin/index.js");
 const ApplyLicenseHeadersPlugin = require("./applyLicenseHeaders.js");
+const ZipReleasesPlugin = require("./zipReleases.js");
 
 /**
  * @type {import('webpack').Configuration}
  */
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   entry: "./src/cli.ts",
   module: {
     rules: [
@@ -49,7 +50,19 @@ module.exports = {
         }
       }
     }),
-    new NodePkgPlugin('phoenixBox.js', 'pheonixBox')
+    new NodePkgPlugin('pheonixBox.js', 'pheonixBox', true),
+    new ZipReleasesPlugin({
+      files: ['pheonixBox-win', 'pheonixBox-win-hash.txt'],
+      releaseType: 'win'
+    }),
+    new ZipReleasesPlugin({
+      files: ['pheonixBox-linux', 'pheonixBox-linux-hash.txt'],
+      releaseType: 'linux'
+    }),
+    new ZipReleasesPlugin({
+      files: ['pheonixBox-macos', 'pheonixBox-macos-hash.txt'],
+      releaseType: 'macos'
+    })
   ],
   target: "node",
   devtool: "source-map",

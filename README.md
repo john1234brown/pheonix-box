@@ -1,2 +1,3 @@
-# This is the Monolithic Workspace
-- Head into the pheonix folder for information about the pheonix-box-cli
+# This is the Monolithic Workspace for Pheonix-Box-Cli
+- The Main workspace for Pheonix-Box-Cli is in the pheonix folder
+

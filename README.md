@@ -16,7 +16,7 @@ To get started with the Pheonix Box CLI, follow the instructions provided in the
 
 ## Contributing
 
-We welcome contributions! Please refer to the [contributing guidelines](https://github.com/john1234brown/pheonix-box/blob/main/pheonix/CONTRIBUTING) in the Pheonix repository for more information on how to contribute to this project.
+We welcome contributions! Please refer to the [contributing guidelines](https://github.com/john1234brown/pheonix-box/blob/main/pheonix/CONTRIBUTING.md) in the Pheonix repository for more information on how to contribute to this project.
 
 ## License
 

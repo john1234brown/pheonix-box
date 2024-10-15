@@ -1,2 +1,0 @@
-Finalize updating the node-pkg-plugin to allow configurable assets to be pkg and bundled into the final binary to simplify creation of the pheonix box!
-this will also help other developers as well be able to easily bundle and tamper proof!

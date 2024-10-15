@@ -41,9 +41,10 @@ class FlushPlugin {
         echoGreen('[+] Flushing node_modules and other directories!');
 
         const directoriesToRemove = [
-          './pheonix/node_modules/',
-          './pheonix/.webpack_cache/',
-          //'./pheonix/production/',
+          './pheonix-box/node_modules/',
+          './pheonix-box/.webpack_cache/',
+          './pheonix-cli/node_modules/',
+          './pheonix-cli/.webpack_cache/',
           './node_modules'
         ];
 

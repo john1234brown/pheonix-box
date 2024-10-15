@@ -1,0 +1,29 @@
+{
+  "name": "pheonix-box",
+  "version": "1.0.0",
+  "author": {
+    "name": "Johnathan Edward Brown",
+    "email": "sierrajohn1234brown@gmail.com",
+    "url": "https://github.com/john1234brown/"
+  },
+  "bugs": {
+    "url": "https://github.com/john1234brown/pheonix-box/issues"
+  },
+  "homepage": "https://github.com/john1234brown/pheonix-box/tree/main/pheonix",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/john1234brown/pheonix-box.git"
+  },
+  "description": "This is a Typescript Project and NPM Module Along with exported access to the JohnsPheonixBox class object. For usage in NodeJS runtime!",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "ts-loader": "^9.5.1"
+  },
+  "dependencies": {
+    "typescript": "^5.6.2"
+  },
+  "license": "X11"
+}

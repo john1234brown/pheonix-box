@@ -59,7 +59,7 @@ node production-npm/pheonixBox.js
 If you have installed the CLI globally, you can use:
 
 ```bash
-pheonix-box
+pheonix-box-cli
 ```
 
 ## Configuration

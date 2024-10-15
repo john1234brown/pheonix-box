@@ -1,3 +1,10 @@
+/************************************************************************************************************************
+ * Author: Johnathan Edward Brown                                                                                       *
+ * Purpose: Configuration class for the CLI Pheonix application.                                                        *
+ * Last Modified: 2024-10-14                                                                                            *
+ * License: X11 License                                                                                                 *
+ * Version: 1.0.0                                                                                                       *
+ ************************************************************************************************************************/
 import * as fs from 'fs';
 
 export class Config {
@@ -16,7 +23,9 @@ export class Config {
         threads: number;
         whiteSpaceOffset: number;
         debug: boolean;
-        localPathReferences: boolean; // Added here
+        localPathReferences: boolean;
+        selfTamperProof: boolean;
+        selfNpmTamperProof: boolean; // Added here
     };
     paths: string[];
     excludePaths: string[];
@@ -31,7 +40,9 @@ export class Config {
     threads: number;
     whiteSpaceOffset: number;
     debug: boolean;
-    localPathReferences: boolean; // Added here
+    localPathReferences: boolean;
+    selfTamperProof: boolean;
+    selfNpmTamperProof: boolean; // Added here
 
     constructor(configObject?: any) {
         this.config = {
@@ -48,7 +59,9 @@ export class Config {
             useAesKey: false,
             debug: false,
             whiteSpaceOffset: 0,
-            localPathReferences: false, // Added here
+            localPathReferences: false,
+            selfTamperProof: false,
+            selfNpmTamperProof: false, // Added here
         };
 
         if (configObject && this.validateConfig(configObject)) {
@@ -70,7 +83,9 @@ export class Config {
         this.threads = this.config.threads;
         this.debug = this.config.debug;
         this.whiteSpaceOffset = this.config.whiteSpaceOffset;
-        this.localPathReferences = this.config.localPathReferences; // Added here
+        this.localPathReferences = this.config.localPathReferences;
+        this.selfTamperProof = this.config.selfTamperProof;
+        this.selfNpmTamperProof = this.config.selfNpmTamperProof; // Added here
     }
 
     private log(message: string) {
@@ -102,7 +117,9 @@ export class Config {
         if (typeof config.threads !== 'number') return false;
         if (typeof config.debug !== 'boolean') return false;
         if (typeof config.whiteSpaceOffset !== 'number') return false;
-        if (typeof config.localPathReferences !== 'boolean') return false; // Added here
+        if (typeof config.localPathReferences !== 'boolean') return false;
+        if (typeof config.selfTamperProof !== 'boolean') return false;
+        if (typeof config.selfNpmTamperProof !== 'boolean') return false; // Added here
         return true;
     }
 
@@ -114,10 +131,10 @@ export class Config {
                 this.log('Configuration loaded successfully.');
             } else {
                 console.error('Invalid configuration file. Loading defaults.');
-                this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false };
+                this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
             }
         } else {
-            this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false };
+            this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
         }
     }
 
@@ -136,7 +153,9 @@ export class Config {
             threads: this.threads,
             debug: this.debug,
             whiteSpaceOffset: this.whiteSpaceOffset,
-            localPathReferences: this.localPathReferences, // Added here
+            localPathReferences: this.localPathReferences,
+            selfTamperProof: this.selfTamperProof,
+            selfNpmTamperProof: this.selfNpmTamperProof, // Added here
         }
         if (this.validateConfig(config)) {
             this.config = config;

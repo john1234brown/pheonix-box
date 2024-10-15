@@ -1,7 +1,7 @@
 // This is a webpack configuration file for the test2.ts file
 const path = require("path");
 const NodePkgPlugin = require("../plugin/index.js");
-
+const ApplyLicenseHeadersPlugin = require('./applyLicenseHeaders.js');
 /**
  * @type {import('webpack').Configuration}
  */
@@ -18,15 +18,45 @@ module.exports = {
     ]
   },
   plugins: [
-//    new NodePkgPlugin('pheonixBox.js', 'pheonixBox'),
+    new ApplyLicenseHeadersPlugin({
+      licenseFileName: 'pheonixBox.js.LICENSE.txt',
+      headers: {
+        'cli': {
+          author: 'Johnathan Edward Brown',
+          purpose: 'CLI with worker thread entry point for the PheonixBox Class Object for the CLI Pheonix application.',
+          license: 'X11 License'
+        },
+        'char': {
+          author: 'Johnathan Edward Brown',
+          purpose: 'Generate safe UTF-8 characters for use in the PheonixBox Class Object for the CLI Pheonix application.',
+          license: 'X11 License'
+        },
+        'config': {
+          author: 'Johnathan Edward Brown',
+          purpose: 'Configuration class for the CLI Pheonix application.',
+          license: 'X11 License'
+        },
+        'main': {
+          author: 'Johnathan Edward Brown',
+          purpose: 'Main entry point for the PheonixBox Class Object for the CLI Pheonix application.',
+          license: 'X11 License'
+        },
+        'worker': {
+          author: 'Johnathan Edward Brown',
+          purpose: 'Worker class for the PheonixBox Class Object for the CLI Pheonix application.',
+          license: 'X11 License'
+        }
+      }
+    }),
+//    new NodePkgPlugin('pheonixBox.js', 'pheonixBox')
   ],
   target: "node",
   devtool: "source-map",
   optimization: {
     usedExports: true,
     chunkIds: "named",
-    minimize: false,
-    mangleExports: false,
+    minimize: true,
+    mangleExports: true,
     moduleIds: "named"
   },
   externalsPresets: { node: true },

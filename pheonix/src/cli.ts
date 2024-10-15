@@ -1,6 +1,10 @@
-// Author: Johnathan Edward Brown
-// Purpose: Main entry point for the CLI Pheonix application.
-// Last Modified: 2024-10-13
+/************************************************************************************************************************
+ * Author: Johnathan Edward Brown                                                                                       *
+ * Purpose: CLI with worker thread entry point for the PheonixBox Class Object for the CLI Pheonix application.         *
+ * Last Modified: 2024-10-14                                                                                            *
+ * License: X11 License                                                                                                 *
+ * Version: 1.0.0                                                                                                       *
+ ************************************************************************************************************************/
 import { Config } from './config';
 import { JohnsPheonixBox } from './main';
 import cluster from 'cluster';
@@ -128,6 +132,16 @@ function handleConfig(action: string, options: string[]) {
             config.saveConfigP();
             console.log(`localPathReferences set to ${options[0]}`);
             break;
+        case 'setSelfTamperProof':
+            config.selfTamperProof = options[0] === 'true';
+            config.saveConfigP();
+            console.log(`selfTamperProof set to ${options[0]}`);
+            break;
+        case 'setSelfNpmTamperProof':
+            config.selfNpmTamperProof = options[0] === 'true';
+            config.saveConfigP();
+            console.log(`selfNpmTamperProof set to ${options[0]}`);
+            break;
         default:
             console.error('Unknown config action');
             displayHelp();
@@ -161,4 +175,8 @@ function displayHelp() {
     console.log('  setForkExecutionDelay <number> Set the fork execution delay');
     console.log('  setDebug <true|false>      Set the debug mode');
     console.log('  setLocalPathReferences <true|false> Set whether to use local path references');
+    console.log('  setSelfTamperProof <true|false> Set whether to use self tamper proof');
+    console.log('  setSelfNpmTamperProof <true|false> Set whether to use self npm tamper proof');
 }
+
+export default JohnsPheonixBox;

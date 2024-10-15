@@ -11,8 +11,10 @@
   "useAesKey": true,
   "forkDelay": 1000,
   "forkExecutionDelay": 1000,
-  "threads": 2,
+  "threads": 1,
   "debug": true,
-  "whiteSpaceOffset": 0,
-  "localPathReferences": true
+  "whiteSpaceOffset": 32,
+  "localPathReferences": true,
+  "selfTamperProof": false,
+  "selfNpmTamperProof": false
 }

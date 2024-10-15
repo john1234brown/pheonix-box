@@ -1,5 +1,4 @@
 # Pheonix Box CLI Tutorial
-
 Welcome to the Pheonix Box CLI tutorial. This guide will help you understand how to use the Pheonix Box CLI to manage and secure your files. Additionally, we will cover how to secure a binary and the root folder space of a Linux OS.
 
 ## Table of Contents
@@ -84,20 +83,25 @@ To secure a binary using the Pheonix Box CLI, follow these steps:
     ```
 
 ## Securing the Root Folder Space
-To secure the root folder space of a Linux OS, follow these steps:
+To secure the root folder space specifically for securing the OS level binaries of a Linux OS, follow these steps:
 
 1. Add the root directory to the configuration:
     ```sh
     sudo ./pheonixBox config addPath /
     ```
 
-2. Enable encryption and hashing:
+2. Exclude the home directory from the configuration to avoid affecting personal files:
+    ```sh
+    sudo ./pheonixBox config excludePath /home
+    ```
+
+3. Enable encryption and hashing:
     ```sh
     sudo ./pheonixBox config setUseCeaserCipher true
     sudo ./pheonixBox config setUseAesKey true
     ```
 
-3. Start the Pheonix process to secure the root folder space:
+4. Start the Pheonix process to secure the root folder space:
     ```sh
     sudo ./pheonixBox start
     ```

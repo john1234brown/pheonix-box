@@ -1,0 +1,10 @@
+# Exclude binaries compiled by the webpack plugin
+production/node-linux
+production/node-macos
+production/node-win
+production/pheonixBox-linux
+production/pheonixBox-macos
+production/pheonixBox-win
+production/*.exe
+production/*.bin
+production/Test/**

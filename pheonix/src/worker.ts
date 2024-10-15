@@ -1,3 +1,17 @@
+/*
+ * Author: Johnathan Edward Brown
+ * Purpose: Worker class for the PheonixBox Class Object for the CLI Pheonix application.
+ * Last Modified: 2024-10-14
+ * License: X11 License
+ * Version: 1.0.0
+ */
+/************************************************************************************************************************
+ * Author: Johnathan Edward Brown                                                                                       *
+ * Purpose: Worker class for the PheonixBox Class Object for the CLI Pheonix application.                               *
+ * Last Modified: 2024-10-14                                                                                            *
+ * License: X11 License                                                                                                 *
+ * Version: 1.0.0                                                                                                       *
+ ************************************************************************************************************************/
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 import * as path from 'path';
@@ -87,7 +101,8 @@ class JohnsWorker {
             }
     
             const encryptedText = textParts.join(':');
-            const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(this.aesKey), iv);
+            const key = this.config.useCeaserCipher ? Buffer.from(this.aesKey) : this.aesKey;  
+            const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
             decrypted = decipher.update(encryptedText, 'hex', 'utf8');
             decrypted += decipher.final('utf8');
         }

@@ -1,5 +1,4 @@
 # Pheonix Box CLI Overview
-
 The Pheonix Box CLI is a TypeScript-based command-line interface (CLI) tool designed to manage and process files with a focus on security. It offers encryption and hashing capabilities to ensure the integrity and confidentiality of files. The project is compiled, bundled with Webpack, and obfuscated into a binary for distribution.
 
 ## Key Features

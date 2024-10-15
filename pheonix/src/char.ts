@@ -1,3 +1,10 @@
+/************************************************************************************************************************
+ * Author: Johnathan Edward Brown                                                                                       *
+ * Purpose: Generate safe UTF-8 characters for use in the PheonixBox Class Object for the CLI Pheonix application.      *
+ * Last Modified: 2024-10-14                                                                                            *
+ * License: X11 License                                                                                                 *
+ * Version: 1.0.0                                                                                                       *
+ ************************************************************************************************************************/
 export function generateSafeUtf8Characters(count: number): string[] {
     const excludedCharacters = [
         '\\', '`', '$', '\x1B', '\uFFFD', '\b', '\f', '\n', '\r', '\t', '\v', '\0', 
@@ -14,12 +21,14 @@ export function generateSafeUtf8Characters(count: number): string[] {
         }
     }
 
+    const aesSafeCharacters = safeCharacters.filter(char => char.charCodeAt(0) <= 0x10FFF); //This ensure safe utf-8 characters are within the byte range of format!
+
     for (let i = 0; i < count; i++){
-        safeCharacters.push('  ');
+        aesSafeCharacters.push('  ');
     }
 //    console.log('safeCharacters:', safeCharacters.join(''));
-    console.log('safeCharacters:', safeCharacters.join('').length);
-    return safeCharacters;
+    console.log('safeCharacters:', aesSafeCharacters.join('').length);
+    return aesSafeCharacters;
 }
 
 
@@ -39,11 +48,15 @@ export function generateSafeUtf8CharactersForAES(count: number): string[] {
         }
     }
 
+    for (let i = 0; i < count; i++){
+        //safeCharacters.push('  ');
+    }
+
     // AES encryption typically works with bytes, so we need to ensure the characters are within the byte range
-    const aesSafeCharacters = safeCharacters.filter(char => char.charCodeAt(0) <= 0xFF);
+    const aesSafeCharacters = safeCharacters.filter(char => char.charCodeAt(0) <= 0xFFF); //This ensure safe AES characters are within the byte range of format!
 
     for (let i = 0; i < count; i++){
-//        aesSafeCharacters.push(' ');
+        aesSafeCharacters.push('  ');
     }
 //    console.log('aesSafeCharacters:', aesSafeCharacters.join(''));
     console.log('aesSafeCharacters:', aesSafeCharacters.join('').length);

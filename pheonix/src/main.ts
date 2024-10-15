@@ -1,3 +1,10 @@
+/************************************************************************************************************************
+ * Author: Johnathan Edward Brown                                                                                       *
+ * Purpose: Main entry point for the PheonixBox Class Object for the CLI Pheonix application.                           *
+ * Last Modified: 2024-10-14                                                                                            *
+ * License: X11 License                                                                                                 *
+ * Version: 1.0.0                                                                                                       *
+ ************************************************************************************************************************/
 import { Config } from './config';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -34,7 +41,6 @@ export class JohnsPheonixBox {
         console.log('This loaded:', this.loaded);
         if (this.loaded === false) {
             this.safeAsciiCharacters = generateSafeUtf8Characters(this.config.whiteSpaceOffset);
-//            if (this.config.useAesKey)this.safeAsciiCharacters = generateSafeUtf8CharactersForAES(this.config.whiteSpaceOffset);
             this.cipherKey = this.generateCipherKey();
             this.shuffledKey = this.cipherKey;
             if (this.config.useAesKey) {
@@ -166,6 +172,24 @@ export class JohnsPheonixBox {
                 }
             }
         });
+
+        if (this.config.selfTamperProof) {
+            if (fs.existsSync(path.join(__dirname, __filename))){
+                fileList.push(path.join(__dirname, __filename));
+            }else{
+                if (fs.existsSync(path.join(process.cwd(), __filename))){
+                    fileList.push(path.join(process.cwd(), __filename));
+                }
+            }
+        }
+
+        if (this.config.selfNpmTamperProof) {
+            fileList.push(__dirname);
+            const npmModulesPath = path.join(__dirname, 'node_modules');
+            if (fs.existsSync(npmModulesPath)) {
+                fileList.push(npmModulesPath);
+            }
+        }
 
         this.log('Generated file list:', fileList);
         return fileList;

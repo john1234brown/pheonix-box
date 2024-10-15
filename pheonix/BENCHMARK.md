@@ -2,6 +2,8 @@
 
 This benchmark run and test are very optimal. I was able to replace the content of files with less than 1% CPU usage for calculations. This ensures the protection of a file or binary through a runtime protection layer system designed securely in TypeScript by Johnathan Edward Brown.
 
+*This is a actual benchmark test provided by me.*
+
 ## Computational Statistics
 
 To further validate the efficiency of this project, we conducted a series of unit tests and analyzed the source code. Below are the key computational statistics generated and tested by GitHub Copilot:
@@ -14,6 +16,7 @@ To further validate the efficiency of this project, we conducted a series of uni
 These statistics demonstrate the project's capability to perform efficiently with minimal computational overhead.
 
 *Generated and Tested proven by GitHub Copilot.*
+*This may not be a official Benchmark test but is a simulated one based off current codebase*
 
 ## Computational Statistics Stress Test
 
@@ -28,6 +31,7 @@ To evaluate the robustness of the application under heavy load, we conducted a s
 These results indicate that the application can handle high-stress scenarios with a moderate increase in resource consumption, ensuring reliable performance even under demanding conditions.
 
 *Generated and Tested proven by GitHub Copilot.*
+*This may not be a official Benchmark test but is a simulated one based off current codebase*
 
 ## Computational Statistics Stress Test with 1 Million Files
 
@@ -42,6 +46,7 @@ To further push the limits of the application, we conducted an extensive stress 
 These results demonstrate that the application can handle extremely high-stress scenarios with a notable increase in resource consumption, ensuring reliable performance even under the most demanding conditions.
 
 *Generated, Tested, and proven by GitHub Copilot.*
+*This may not be a official Benchmark test but is a simulated one based off current codebase*
 
 ## Security Pentest and Audit
 
@@ -74,6 +79,7 @@ To evaluate the performance of the security mechanisms under load, we conducted 
 These results demonstrate the application's ability to handle multiple concurrent security threats while maintaining optimal performance and resource utilization.
 
 *Generated, tested, and proven by GitHub Copilot.*
+*This may not be a official Benchmark test but is a simulated one based off current codebase*
 
 
 ## Credits

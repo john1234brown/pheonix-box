@@ -40,6 +40,14 @@ To compile the npm module CLI, run:
 npm run webpack:npm
 ```
 
+### Global Installation
+
+You can also install the Pheonix Box CLI globally to use the npm CLI version:
+
+```bash
+npm install -g pheonix-box-cli
+```
+
 ## Usage
 
 To start the Pheonix Box CLI, run the following command:
@@ -48,7 +56,11 @@ To start the Pheonix Box CLI, run the following command:
 node production-npm/pheonixBox.js
 ```
 
+If you have installed the CLI globally, you can use:
 
+```bash
+pheonix-box
+```
 
 ## Configuration
 

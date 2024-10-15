@@ -1,6 +1,6 @@
 // This is a webpack configuration file for the test2.ts file
 const path = require("path");
-const NodePkgPlugin = require("../plugin/index.js");
+const NodePkgPlugin = require('node-pkg-plugin');
 const ApplyLicenseHeadersPlugin = require("./applyLicenseHeaders.js");
 const ZipReleasesPlugin = require("./zipReleases.js");
 

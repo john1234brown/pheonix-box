@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Pheonix-Box-Cli! We welcome contr
 
 ## Code of Conduct
 
-This project adheres to the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct/). By participating, you are expected to uphold this code. Please report unacceptable behavior to [email@example.com](mailto:sierrajohn1234brown@gmail.com).
+This project adheres to the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct/). By participating, you are expected to uphold this code. Please report unacceptable behavior to [sierrajohn1234brown@gmail.com](mailto:sierrajohn1234brown@gmail.com).
 
 ## How to Contribute
 
@@ -37,7 +37,7 @@ By contributing to Pheonix-Box-Cli, you agree that your contributions will be li
 
 ## Contact
 
-If you have any questions, feel free to reach out to the maintainers at [email@example.com](mailto:sierrajohn1234brown@gmail.com).
+If you have any questions, feel free to reach out to the maintainers at [sierrajohn1234brown@gmail.com](mailto:sierrajohn1234brown@gmail.com).
 
 Thank you for contributing!
 

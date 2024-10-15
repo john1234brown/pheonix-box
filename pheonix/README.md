@@ -1,6 +1,5 @@
 # Pheonix Box CLI
-
-Pheonix Box CLI is a TypeScript project that is compiled, bundled with Webpack, and obfuscated into a binary. It provides a robust tamper proof solution for managing and processing files with encryption and hashing capabilities.
+Pheonix Box CLI is a TypeScript project that is compiled, bundled with Webpack, and obfuscated into a binary. It provides a robust tamper-proof solution for managing and processing files with encryption and hashing capabilities.
 
 ## Table of Contents
 
@@ -26,7 +25,7 @@ npm run build
 To bundle the project with Webpack, run:
 
 ```bash
-npm run webpack
+npm run webpack:bin
 ```
 
 For development builds, use:
@@ -35,12 +34,18 @@ For development builds, use:
 npm run dev:webpack
 ```
 
+To compile the npm module CLI, run:
+
+```bash
+npm run webpack:npm
+```
+
 ## Usage
 
 To start the Pheonix Box CLI, run the following command:
 
 ```bash
-node production/app.js
+node production/pheonixBox.js
 ```
 
 ## Configuration
@@ -136,4 +141,4 @@ By following this guide, you can effectively manage and customize the configurat
 
 ## License
 
-This project is licensed under the X11 License. See the [LICENSE](../LICENSE) file for details.
+This project is licensed under the X11 License. See the [LICENSE](https://github.com/john1234brown/pheonix-box/blob/main/pheonix/LICENSE) file for details.

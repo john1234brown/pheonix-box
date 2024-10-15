@@ -1,4 +1,5 @@
-# Pheonix Box CLI Tutorial
+# Pheonix Box CLI Tutorial (NPM Version)
+
 Welcome to the Pheonix Box CLI tutorial. This guide will help you understand how to use the Pheonix Box CLI to manage and secure your files. Additionally, we will cover how to secure a binary and the root folder space of a Linux OS.
 
 ## Table of Contents
@@ -14,7 +15,7 @@ Welcome to the Pheonix Box CLI tutorial. This guide will help you understand how
 The Pheonix Box CLI is a powerful tool for managing and securing files. Its encryption and hashing capabilities ensure the confidentiality and integrity of files, making it suitable for various security applications. The configurable settings, concurrency support, and state management features make it a versatile and efficient solution for file processing tasks.
 
 ## Installation
-To install the Pheonix Box CLI, follow these steps:
+To install the Pheonix Box CLI via NPM, follow these steps:
 
 1. Clone the repository:
     ```sh
@@ -29,7 +30,7 @@ To install the Pheonix Box CLI, follow these steps:
 
 3. Build the project:
     ```sh
-    npm run build
+    npm run webpack:npm
     ```
 
 ## Basic Usage
@@ -110,3 +111,91 @@ To secure the root folder space specifically for securing the OS level binaries 
 
 ## Conclusion
 The Pheonix Box CLI is a versatile tool for managing and securing files. By following this tutorial, you can configure and use the CLI to secure your binaries and the root folder space of your Linux OS. For more detailed information, refer to the project's documentation and source code.
+
+### New Additions
+
+- **Concurrency Support**: You can now set the number of concurrent threads for file processing.
+    ```sh
+    ./pheonixBox config setThreads 4
+    ```
+
+- **State Management**: The CLI now supports state management to resume interrupted processes.
+    ```sh
+    ./pheonixBox state save
+    ./pheonixBox state load
+    ```
+
+- **Enhanced Debugging**: Enable debugging to get detailed logs.
+    ```sh
+    ./pheonixBox config setDebug true
+    ```
+
+By following this updated guide, you can take full advantage of the new features and improvements in the Pheonix Box CLI.
+
+
+## Pure Binary Usage for Different OS
+
+The Pheonix Box CLI can also be used as a pure binary without relying on Node.js or NPM. Below are the steps to use the binary on different operating systems.
+
+### Linux
+
+1. Download the binary for Linux from the [releases page](https://github.com/john1234brown/Pheonix-Box-Cli/releases).
+
+2. Make the binary executable:
+    ```sh
+    chmod +x pheonixBox-linux
+    ```
+
+3. Run the binary:
+    ```sh
+    ./pheonixBox-linux start
+    ```
+
+### macOS
+
+1. Download the binary for macOS from the [releases page](https://github.com/john1234brown/Pheonix-Box-Cli/releases).
+
+2. Make the binary executable:
+    ```sh
+    chmod +x pheonixBox-macos
+    ```
+
+3. Run the binary:
+    ```sh
+    ./pheonixBox-macos start
+    ```
+
+### Windows
+
+1. Download the binary for Windows from the [releases page](https://github.com/john1234brown/Pheonix-Box-Cli/releases).
+
+2. Run the binary:
+    ```sh
+    pheonixBox-windows.exe start
+    ```
+
+### Common Commands
+
+Regardless of the operating system, you can use the following commands with the binary:
+
+- Display help:
+    ```sh
+    ./pheonixBox help
+    ```
+
+- Add a path to the configuration:
+    ```sh
+    ./pheonixBox config addPath /path/to/directory
+    ```
+
+- Set the number of threads:
+    ```sh
+    ./pheonixBox config setThreads 4
+    ```
+
+- Enable AES Key encryption:
+    ```sh
+    ./pheonixBox config setUseAesKey true
+    ```
+
+By following these steps, you can use the Pheonix Box CLI as a standalone binary on various operating systems, making it a versatile tool for file management and security.

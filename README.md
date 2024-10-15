@@ -20,6 +20,6 @@ We welcome contributions! Please refer to the [contributing guidelines](https://
 
 ## License
 
-This project is licensed under the terms of the X11 license. See the [LICENSE](https://github.com/john1234brown/pheonix-box/blob/main/pheonix/LICENSE) file in the Pheonix repository for details.
+This project is licensed under the terms of the X11 license. See the [LICENSE](https://github.com/john1234brown/pheonix-box/blob/main/pheonix/LICENSE.md) file in the Pheonix repository for details.
 
 For more information, visit the [Pheonix repository](https://github.com/john1234brown/pheonix-box).

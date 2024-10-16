@@ -1,7 +1,8 @@
 // This is a webpack configuration file for the test2.ts file
 const path = require("path");
-const NodePkgPlugin = require("../plugin/index.js");
 const ApplyLicenseHeadersPlugin = require('./applyLicenseHeaders.js');
+const { WebpackPkgPlugin } = require('node-pkg-plugin');
+const ZipReleasesPlugin = require('./zipReleasesWebpack.js');
 /**
  * @type {import('webpack').Configuration}
  */
@@ -48,14 +49,29 @@ module.exports = {
         }
       }
     }),
-//    new NodePkgPlugin('pheonixBox.js', 'pheonixBox')
+    new WebpackPkgPlugin('pheonixBox.js', 'pheonixBox', true),
+    new ZipReleasesPlugin({
+      files: ['pheonixBox-linux', 'pheonixBox-linux-hash.txts'],
+      releaseType: 'production',
+      outputDir: 'production/releases'
+    }),
+    new ZipReleasesPlugin({
+      files: ['pheonixBox-win', 'pheonixBox-win-hash.txt'],
+      releaseType: 'production',
+      outputDir: 'production/releases'
+    }),
+    new ZipReleasesPlugin({
+      files: ['pheonixBox-macos', 'pheonixBox-macos-hash.txt'],
+      releaseType: 'production',
+      outputDir: 'production/releases'
+    })
   ],
   target: "node",
   devtool: "source-map",
   optimization: {
     usedExports: true,
     chunkIds: "named",
-    minimize: true,
+    minimize: false,
     mangleExports: true,
     moduleIds: "named"
   },
@@ -71,11 +87,11 @@ module.exports = {
       "@languages": path.resolve(__dirname, "../languages")
     }
   },
-  cache: {
+/*  cache: {
     type: 'filesystem', // Enable filesystem caching
     cacheDirectory: path.resolve(__dirname, '.webpack_cache'), // Specify cache directory
     buildDependencies: {
       config: [__filename], // Cache the config file itself
     },
-  },
+  },*/
 };

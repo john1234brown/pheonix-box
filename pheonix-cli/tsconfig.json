@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "module": "commonjs",
-    "target": "es6",
+    "module": "CommonJS",
+    "target": "ESNext",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "declaration": false,
+    "declaration": true,
+    "declarationDir": "./types",
     "skipLibCheck": false,
     "strictNullChecks": true,
     "noImplicitAny": true,
@@ -13,5 +14,5 @@
     "strict": true,
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/disabled/", "src/wip/", "production", "production-npm"]
+  "exclude": ["node_modules", "dist", "src/disabled/", "src/wip/", "production-webpack", "production-npm"]
 }

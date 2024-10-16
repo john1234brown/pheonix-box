@@ -1,3 +1,4 @@
-test/**
+dist/**
+types/**
 node_modules/**
 .webpack_cache/**

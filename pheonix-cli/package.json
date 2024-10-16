@@ -16,15 +16,19 @@
   },
   "description": "This is a Typescript -> Webpacked -> Obfuscated -> Binary Project Builder Along with exported access to the JohnsPheonixBox class object.",
   "main": "production-npm/pheonixBox.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
-    "compile": "npm run webpack:npm && npm run webpack:bin",
-    "webpack:bin": "webpack --config webpack.config.js",
-    "webpack:npm": "webpack --config webpack.config-npm.js",
-    "dev:webpack": "webpack --config webpack.config-dev.js"
+    "rollup:bin": "npm run build && rollup -c",
+    "dev:webpack": "webpack --config webpack.config-dev.js",
+    "webpack:bin": "webpack --config webpack.config.js"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.0",
+    "@rollup/plugin-node-resolve": "^15.3.0",
     "archiver": "^7.0.1",
+    "rollup": "^4.24.0",
+    "rollup-plugin-dts": "^6.1.1",
     "ts-loader": "^9.5.1",
     "webpack": "^5.73.0",
     "webpack-cli": "^4.10.0",

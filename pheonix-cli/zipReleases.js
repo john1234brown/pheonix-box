@@ -1,31 +1,40 @@
-const path = require('path');
-const fs = require('fs');
-const archiver = require('archiver');
-const { Compilation } = require('webpack');
+import path from 'path';
+import fs from 'fs';
+import archiver from 'archiver';
 
 function getPackageVersion() {
-    const packageJsonPath = path.join(__dirname, 'package.json');
+    const packageJsonPath = path.join(process.cwd(), 'package.json');
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
     return packageJson.version;
 }
 
-class ZipReleasesPlugin {
-    constructor(options) {
-        this.files = options.files || [];
-        this.releaseType = options.releaseType || 'default';
+function ensureDirectoryExistence(filePath) {
+    const dirname = path.dirname(filePath);
+    if (fs.existsSync(dirname)) {
+        return true;
+    }
+    fs.mkdirSync(dirname, { recursive: true });
+}
+
+function zipReleasesPlugin(options = {}) {
+    const files = options.files || [];
+    const releaseType = options.releaseType || 'default';
+    const outputDir = options.outputDir || process.cwd();
+
+    if (files.length !== 2) {
+        throw new Error('Exactly two files must be specified.');
     }
 
-    apply(compiler) {
-        compiler.hooks.afterEmit.tapAsync('ZipReleasesPlugin', (compilation, callback) => {
+    return {
+        name: 'zip-releases-plugin',
+        generateBundle(outputOptions, bundle, isWrite) {
             const version = getPackageVersion();
-            const outputPath = compilation.options.output.path;
+            const outputPath = path.resolve(process.cwd(), outputDir);
+            const baseOutputPath = path.dirname(outputPath);
 
-            if (this.files.length !== 2) {
-                throw new Error('Exactly two files must be specified.');
-            }
-
-            const zipFileName = `release-${this.releaseType}-${version}.zip`;
+            const zipFileName = `release-${releaseType}-${version}.zip`;
             const zipFilePath = path.join(outputPath, zipFileName);
+            ensureDirectoryExistence(zipFilePath);
 
             const output = fs.createWriteStream(zipFilePath);
             const archive = archiver('zip', { zlib: { level: 9 } });
@@ -33,7 +42,6 @@ class ZipReleasesPlugin {
             output.on('close', () => {
                 console.log(`${archive.pointer()} total bytes`);
                 console.log(`Archiver has been finalized and the output file descriptor has closed for ${zipFileName}.`);
-                callback();
             });
 
             archive.on('error', (err) => {
@@ -41,26 +49,28 @@ class ZipReleasesPlugin {
             });
 
             archive.pipe(output);
-            this.files.forEach(file => {
-                const filePath = path.join(outputPath, file);
+            files.forEach(file => {
+                const filePath = path.join(baseOutputPath, 'production', file);
+                console.log('Archiving:', filePath);
                 archive.file(filePath, { name: file });
             });
             archive.finalize();
-        });
-    }
+        }
+    };
 }
 
-module.exports = ZipReleasesPlugin;
+export default zipReleasesPlugin;
 
-// Example usage:
-// const ZipReleasesPlugin = require('./zipReleases');
-// 
-// module.exports = {
-//     // other webpack config options...
+// Example usage in rollup.config.js:
+// import zipReleasesPlugin from './zipReleases.js';
+//
+// export default {
+//     // other rollup config options...
 //     plugins: [
-//         new ZipReleasesPlugin({
+//         zipReleasesPlugin({
 //             files: ['file1.js', 'file2.js'],
-//             releaseType: 'beta'
+//             releaseType: 'beta',
+//             outputDir: 'dist/releases'
 //         })
 //     ]
 // };

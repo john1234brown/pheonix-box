@@ -29,11 +29,20 @@ exports.Config = void 0;
  * Purpose: Configuration class for the CLI Pheonix application.                                                        *
  * Last Modified: 2024-10-14                                                                                            *
  * License: X11 License                                                                                                 *
- * Version: 1.0.0                                                                                                       *
+ * Version: 1.0.2                                                                                                       *
  ************************************************************************************************************************/
 const fs = __importStar(require("fs"));
+/**
+ * Class representing the configuration settings.
+ */
 class Config {
+    /**
+     * Path to the configuration file.
+     */
     configFilePath = 'configurable.json';
+    /**
+     * Configuration object containing various settings.
+     */
     config;
     paths;
     excludePaths;
@@ -50,7 +59,11 @@ class Config {
     debug;
     localPathReferences;
     selfTamperProof;
-    selfNpmTamperProof; // Added here
+    selfNpmTamperProof;
+    /**
+     * Creates an instance of Config.
+     * @param configObject - Optional configuration object to initialize with.
+     */
     constructor(configObject) {
         this.config = {
             paths: [],
@@ -68,7 +81,7 @@ class Config {
             whiteSpaceOffset: 0,
             localPathReferences: false,
             selfTamperProof: false,
-            selfNpmTamperProof: false, // Added here
+            selfNpmTamperProof: false,
         };
         if (configObject && this.validateConfig(configObject)) {
             this.config = configObject;
@@ -91,14 +104,25 @@ class Config {
         this.whiteSpaceOffset = this.config.whiteSpaceOffset;
         this.localPathReferences = this.config.localPathReferences;
         this.selfTamperProof = this.config.selfTamperProof;
-        this.selfNpmTamperProof = this.config.selfNpmTamperProof; // Added here
+        this.selfNpmTamperProof = this.config.selfNpmTamperProof;
     }
+    /**
+     * Logs a message if debug mode is enabled.
+     * @param message - The message to log.
+     */
     log(message) {
         if (this.debug) {
             console.log(message);
         }
     }
+    /**
+     * Saves the current configuration to the configuration file.
+     */
     saveConfig() {
+        if (this.config.selfTamperProof || this.config.selfNpmTamperProof) {
+            console.error('Configuration is tamper-proof. Save aborted.');
+            return;
+        }
         if (this.validateConfig(this.config)) {
             fs.writeFileSync(this.configFilePath, JSON.stringify(this.config, null, 2));
             this.log('Configuration saved successfully.');
@@ -107,6 +131,11 @@ class Config {
             console.error('Invalid configuration. Save aborted.');
         }
     }
+    /**
+     * Validates the given configuration object.
+     * @param config - The configuration object to validate.
+     * @returns True if the configuration is valid, false otherwise.
+     */
     validateConfig(config) {
         if (!Array.isArray(config.paths))
             return false;
@@ -139,10 +168,17 @@ class Config {
         if (typeof config.selfTamperProof !== 'boolean')
             return false;
         if (typeof config.selfNpmTamperProof !== 'boolean')
-            return false; // Added here
+            return false;
         return true;
     }
+    /**
+     * Loads the configuration from the configuration file.
+     */
     loadConfig() {
+        if (this.config.selfTamperProof || this.config.selfNpmTamperProof) {
+            console.error('Configuration is tamper-proof. Load aborted.');
+            return;
+        }
         if (fs.existsSync(this.configFilePath)) {
             const loadedConfig = JSON.parse(fs.readFileSync(this.configFilePath, 'utf-8'));
             if (this.validateConfig(loadedConfig)) {
@@ -158,6 +194,10 @@ class Config {
             this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
         }
     }
+    /**
+     * Saves the current configuration to the configuration file.
+     * This method is public and updates the internal configuration before saving.
+     */
     saveConfigP() {
         const config = {
             paths: this.paths,
@@ -175,7 +215,7 @@ class Config {
             whiteSpaceOffset: this.whiteSpaceOffset,
             localPathReferences: this.localPathReferences,
             selfTamperProof: this.selfTamperProof,
-            selfNpmTamperProof: this.selfNpmTamperProof, // Added here
+            selfNpmTamperProof: this.selfNpmTamperProof,
         };
         if (this.validateConfig(config)) {
             this.config = config;
@@ -185,6 +225,10 @@ class Config {
             console.error('Invalid configuration. Save aborted.');
         }
     }
+    /**
+     * Adds a path to the configuration.
+     * @param path - The path to add.
+     */
     addPath(path) {
         if (!this.config.paths.includes(path)) {
             this.config.paths.push(path);
@@ -192,6 +236,10 @@ class Config {
             this.log(`Path ${path} added to configuration.`);
         }
     }
+    /**
+     * Removes a path from the configuration.
+     * @param path - The path to remove.
+     */
     removePath(path) {
         const index = this.config.paths.indexOf(path);
         if (index > -1) {
@@ -200,6 +248,10 @@ class Config {
             this.log(`Path ${path} removed from configuration.`);
         }
     }
+    /**
+     * Adds an exclude path to the configuration.
+     * @param path - The exclude path to add.
+     */
     addExcludePath(path) {
         if (!this.config.excludePaths.includes(path)) {
             this.config.excludePaths.push(path);
@@ -207,6 +259,10 @@ class Config {
             this.log(`Exclude path ${path} added to configuration.`);
         }
     }
+    /**
+     * Removes an exclude path from the configuration.
+     * @param path - The exclude path to remove.
+     */
     removeExcludePath(path) {
         const index = this.config.excludePaths.indexOf(path);
         if (index > -1) {
@@ -215,6 +271,10 @@ class Config {
             this.log(`Exclude path ${path} removed from configuration.`);
         }
     }
+    /**
+     * Adds a file type to the configuration.
+     * @param fileType - The file type to add.
+     */
     addFileType(fileType) {
         if (!this.config.fileTypes.includes(fileType)) {
             this.config.fileTypes.push(fileType);
@@ -222,6 +282,10 @@ class Config {
             this.log(`File type ${fileType} added to configuration.`);
         }
     }
+    /**
+     * Removes a file type from the configuration.
+     * @param fileType - The file type to remove.
+     */
     removeFileType(fileType) {
         const index = this.config.fileTypes.indexOf(fileType);
         if (index > -1) {
@@ -230,6 +294,10 @@ class Config {
             this.log(`File type ${fileType} removed from configuration.`);
         }
     }
+    /**
+     * Adds a file regex to the configuration.
+     * @param regex - The file regex to add.
+     */
     addFileRegex(regex) {
         if (!this.config.fileRegexs.includes(regex)) {
             this.config.fileRegexs.push(regex);
@@ -237,6 +305,10 @@ class Config {
             this.log(`File regex ${regex} added to configuration.`);
         }
     }
+    /**
+     * Removes a file regex from the configuration.
+     * @param regex - The file regex to remove.
+     */
     removeFileRegex(regex) {
         const index = this.config.fileRegexs.indexOf(regex);
         if (index > -1) {

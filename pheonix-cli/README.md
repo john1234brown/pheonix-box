@@ -114,42 +114,9 @@ The `Config` class provides several methods to manage the configuration:
 - `removeFileRegex(regex: string)`: Removes a file regex from the configuration.
 - `saveConfigP()`: Saves the current configuration to the file.
 
-### Example Usage
-
-Here is an example of how to use the `Config` class:
-
-```typescript
-import { Config } from './config';
-
-const config = new Config();
-
-// Add a new path
-config.addPath('new/path');
-
-// Remove an existing path
-config.removePath('old/path');
-
-// Add a new file type
-config.addFileType('.jsx');
-
-// Remove an existing file type
-config.removeFileType('.js');
-
-// Save the updated configuration
-config.saveConfigP();
-```
-
-This will update the `configurable.json` file with the new settings.
-
 ### Debugging
 
 If you enable the `debug` option, the `Config` class will log messages to the console, which can help you troubleshoot issues with your configuration.
-
-```typescript
-const config = new Config();
-config.debug = true;
-config.addPath('new/path'); // This will log a message to the console
-```
 
 By following this guide, you can effectively manage and customize the configuration for the Pheonix Box CLI project.
 

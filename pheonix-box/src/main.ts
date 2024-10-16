@@ -3,7 +3,7 @@
  * Purpose: Main entry point for the PheonixBox Class Object for the CLI Pheonix application.                           *
  * Last Modified: 2024-10-14                                                                                            *
  * License: X11 License                                                                                                 *
- * Version: 1.0.0                                                                                                       *
+ * Version: 1.0.2                                                                                                       *
  ************************************************************************************************************************/
 import { Config } from './config';
 import * as crypto from 'crypto';
@@ -36,6 +36,10 @@ if (cluster.isWorker) {
 
 const STATE_FILE_PATH = path.join(process.cwd(), 'pheonixBoxState.json');
 
+/**
+ * The `JohnsPheonixBox` class provides functionality for managing file hashes, contents, and encryption keys.
+ * It supports runtime protection, state saving/loading, and multi-threaded processing.
+ */
 export class JohnsPheonixBox {
     private config: Config;
     private fileHashes: { [key: string]: string } = {};
@@ -46,13 +50,24 @@ export class JohnsPheonixBox {
     private aesKey: Buffer | null = null;
     private loaded: boolean;
 
-    constructor(useSeaAsset: boolean = false, assetLocation: string = '') {
+    /**
+     * Initializes a new instance of the `JohnsPheonixBox` class.
+     * 
+     * @param {Config} [config] - Optional configuration object.
+     * @param {boolean} [useSeaAsset=false] - Whether to use a SEA asset for configuration.
+     * @param {string} [assetLocation=''] - The location of the SEA asset.
+     */
+    constructor(config?: Config, useSeaAsset: boolean = false, assetLocation: string = '') {
         this.loaded = false;
-        if (useSeaAsset && assetLocation) {
+        if (config) {
+            this.config = config;
+            if (!this.config.selfNpmTamperProof && !this.config.selfTamperProof)this.config.saveConfigP();//Prevent Binary Tamper proofing from saving there configurations!
+            this.loadState();
+        } else if (useSeaAsset && assetLocation) {
             this.config = this.loadConfigFromSeaAsset(assetLocation);
         } else {
             this.config = new Config();
-            this.config.saveConfigP();
+            if (!this.config.selfNpmTamperProof && !this.config.selfTamperProof)this.config.saveConfigP();//Prevent Binary Tamper proofing from saving there configurations!
             this.loadState();
         }
         this.log('Initializing JohnsPheonixBox...');
@@ -86,6 +101,64 @@ export class JohnsPheonixBox {
         }
     }
 
+    /**
+     * Initializes runtime protection for the application.
+     * 
+     * @param {boolean} [npm] - If true, enables npm tamper-proof protection.
+     * @param {boolean} [binary] - If true, enables binary tamper-proof protection.
+     * @param {boolean} [localReferences] - If true, adds local file references to the configuration.
+     * @param {boolean} [dirname] - If true, uses `__dirname` for path resolution; otherwise, uses `process.cwd()`.
+     * 
+     * @remarks
+     * - When `npm` is true, the method configures paths for npm tamper-proof protection.
+     * - When `binary` is true, the method configures paths for binary tamper-proof protection.
+     * - If `localReferences` is true, it adds the current file and 'node_modules' to the configuration paths.
+     * - If `dirname` is true, it uses `__dirname` for path resolution; otherwise, it uses the current working directory.
+     * - The method ensures that tamper-proof protection is enabled only if it is not already set.
+     */
+    public initRuntimeProtect(npm?: boolean, binary?: boolean, localReferences?: boolean, dirname?: boolean) {
+        if (npm){
+            if (!this.config.selfNpmTamperProof){
+                this.config.selfNpmTamperProof = true;
+            }
+            if (localReferences){
+                this.config.addPath(__filename);
+                this.config.addPath('node_modules');
+            }else{
+                if (dirname){
+                    this.config.addPath(path.join(__dirname, __filename,));
+                    this.config.addPath(path.join(__dirname, 'node_modules'));
+                }else{
+                    this.config.addPath(path.join(process.cwd(), __filename));
+                    this.config.addPath(path.join(process.cwd(), 'node_modules'));
+                }
+            }
+        }
+
+        if (binary){
+            if (!this.config.selfTamperProof){
+                this.config.selfTamperProof = true;
+            }
+            if (localReferences){
+                this.config.addPath(__filename);
+            }else{
+                if (dirname){
+                    this.config.addPath(path.join(__dirname, __filename));
+                }else{
+                    this.config.addPath(path.join(process.cwd(), __filename));
+                }
+            }
+        }
+
+        if (localReferences)this.config.localPathReferences = true;
+    }
+
+    /**
+     * Loads the configuration from a SEA asset.
+     * 
+     * @param {string} assetLocation - The location of the SEA asset.
+     * @returns {Config} The loaded configuration object.
+     */
     private loadConfigFromSeaAsset(assetLocation: string): Config {
         console.log('Loading config from sea asset:', assetLocation);
         const arrayBuffer = sea.getAsset(assetLocation);
@@ -94,6 +167,9 @@ export class JohnsPheonixBox {
         return JSON.parse(configString);
     }
 
+    /**
+     * Loads the state from a file.
+     */
     private loadState() {
         console.log('Loading state from file:', STATE_FILE_PATH);
         if (fs.existsSync(STATE_FILE_PATH)) {
@@ -111,6 +187,9 @@ export class JohnsPheonixBox {
         }
     }
 
+    /**
+     * Saves the current state to a file.
+     */
     private saveState() {
         this.log('Saving state to file:', STATE_FILE_PATH);
         const state: any = {
@@ -126,6 +205,9 @@ export class JohnsPheonixBox {
         this.log('Saved state:', state);
     }
 
+    /**
+     * Starts the process, managing worker threads and distributing tasks.
+     */
     public startProcess() {
         if (cluster.isPrimary) {
             let numCPUs = os.cpus().length;
@@ -165,6 +247,11 @@ export class JohnsPheonixBox {
         }
     }
 
+    /**
+     * Generates a list of files to be processed.
+     * 
+     * @returns {string[]} The list of file paths.
+     */
     private getFileList(): string[] {
         this.log('Generating file list...');
         const fileList: string[] = [];
@@ -213,6 +300,11 @@ export class JohnsPheonixBox {
         return fileList;
     }
 
+    /**
+     * Generates a cipher key by shuffling safe ASCII characters.
+     * 
+     * @returns {string} The generated cipher key.
+     */
     private generateCipherKey(): string {
         this.log('Generating cipher key...');
         const alphabet = this.safeAsciiCharacters;
@@ -222,10 +314,16 @@ export class JohnsPheonixBox {
             [array[i], array[j]] = [array[j], array[i]];
         }
         const cipherKey = array.join('');
-//        this.log('Generated cipher key:', cipherKey);
+        this.log('Generated cipher key:', cipherKey);
         return cipherKey;
     }
 
+    /**
+     * Shuffles an array of strings.
+     * 
+     * @param {string[]} array - The array of strings to shuffle.
+     * @returns {string[]} The shuffled array.
+     */
     private shuffleKeys(array: string[]): string[] {
         this.log('Shuffling key...');
         for (let i = array.length - 1; i > 0; i--) {
@@ -235,6 +333,12 @@ export class JohnsPheonixBox {
         return array;
     }
 
+    /**
+     * Shuffles a given key string.
+     * 
+     * @param {string} key - The key string to shuffle.
+     * @returns {string} The shuffled key.
+     */
     private shuffleKey(key: string): string {
         this.log('Shuffling key...');
         const array = key.split('');
@@ -243,11 +347,9 @@ export class JohnsPheonixBox {
             [array[i], array[j]] = [array[j], array[i]];
         }
         const shuffledKey = array.join('');
-//        this.log('Shuffled key:', shuffledKey);
+        this.log('Shuffled key:', shuffledKey);
         return shuffledKey;
     }
 }
 
-//const johnsPheonixBox = new JohnsPheonixBox();
-//johnsPheonixBox.startProcess();
-module.exports = { JohnsPheonixBox };
+export { Config };

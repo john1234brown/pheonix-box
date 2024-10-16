@@ -1,6 +1,6 @@
 {
   "name": "pheonix-box",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "Johnathan Edward Brown",
     "email": "sierrajohn1234brown@gmail.com",
@@ -17,7 +17,8 @@
   "description": "This is a Typescript Project and NPM Module Along with exported access to the JohnsPheonixBox class object. For usage in NodeJS runtime!",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "bundle": "rollup -c"
   },
   "devDependencies": {
     "ts-loader": "^9.5.1"

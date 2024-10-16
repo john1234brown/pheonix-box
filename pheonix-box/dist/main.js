@@ -26,15 +26,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JohnsPheonixBox = exports.clusterLock = void 0;
+exports.Config = exports.JohnsPheonixBox = exports.clusterLock = void 0;
 /************************************************************************************************************************
  * Author: Johnathan Edward Brown                                                                                       *
  * Purpose: Main entry point for the PheonixBox Class Object for the CLI Pheonix application.                           *
  * Last Modified: 2024-10-14                                                                                            *
  * License: X11 License                                                                                                 *
- * Version: 1.0.0                                                                                                       *
+ * Version: 1.0.2                                                                                                       *
  ************************************************************************************************************************/
 const config_1 = require("./config");
+Object.defineProperty(exports, "Config", { enumerable: true, get: function () { return config_1.Config; } });
 const crypto = __importStar(require("crypto"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
@@ -64,6 +65,10 @@ if (cluster_1.default.isWorker) {
     });
 }
 const STATE_FILE_PATH = path.join(process.cwd(), 'pheonixBoxState.json');
+/**
+ * The `JohnsPheonixBox` class provides functionality for managing file hashes, contents, and encryption keys.
+ * It supports runtime protection, state saving/loading, and multi-threaded processing.
+ */
 class JohnsPheonixBox {
     config;
     fileHashes = {};
@@ -73,14 +78,28 @@ class JohnsPheonixBox {
     safeAsciiCharacters = [];
     aesKey = null;
     loaded;
-    constructor(useSeaAsset = false, assetLocation = '') {
+    /**
+     * Initializes a new instance of the `JohnsPheonixBox` class.
+     *
+     * @param {Config} [config] - Optional configuration object.
+     * @param {boolean} [useSeaAsset=false] - Whether to use a SEA asset for configuration.
+     * @param {string} [assetLocation=''] - The location of the SEA asset.
+     */
+    constructor(config, useSeaAsset = false, assetLocation = '') {
         this.loaded = false;
-        if (useSeaAsset && assetLocation) {
+        if (config) {
+            this.config = config;
+            if (!this.config.selfNpmTamperProof && !this.config.selfTamperProof)
+                this.config.saveConfigP(); //Prevent Binary Tamper proofing from saving there configurations!
+            this.loadState();
+        }
+        else if (useSeaAsset && assetLocation) {
             this.config = this.loadConfigFromSeaAsset(assetLocation);
         }
         else {
             this.config = new config_1.Config();
-            this.config.saveConfigP();
+            if (!this.config.selfNpmTamperProof && !this.config.selfTamperProof)
+                this.config.saveConfigP(); //Prevent Binary Tamper proofing from saving there configurations!
             this.loadState();
         }
         this.log('Initializing JohnsPheonixBox...');
@@ -111,6 +130,66 @@ class JohnsPheonixBox {
             console.log(...args);
         }
     }
+    /**
+     * Initializes runtime protection for the application.
+     *
+     * @param {boolean} [npm] - If true, enables npm tamper-proof protection.
+     * @param {boolean} [binary] - If true, enables binary tamper-proof protection.
+     * @param {boolean} [localReferences] - If true, adds local file references to the configuration.
+     * @param {boolean} [dirname] - If true, uses `__dirname` for path resolution; otherwise, uses `process.cwd()`.
+     *
+     * @remarks
+     * - When `npm` is true, the method configures paths for npm tamper-proof protection.
+     * - When `binary` is true, the method configures paths for binary tamper-proof protection.
+     * - If `localReferences` is true, it adds the current file and 'node_modules' to the configuration paths.
+     * - If `dirname` is true, it uses `__dirname` for path resolution; otherwise, it uses the current working directory.
+     * - The method ensures that tamper-proof protection is enabled only if it is not already set.
+     */
+    initRuntimeProtect(npm, binary, localReferences, dirname) {
+        if (npm) {
+            if (!this.config.selfNpmTamperProof) {
+                this.config.selfNpmTamperProof = true;
+            }
+            if (localReferences) {
+                this.config.addPath(__filename);
+                this.config.addPath('node_modules');
+            }
+            else {
+                if (dirname) {
+                    this.config.addPath(path.join(__dirname, __filename));
+                    this.config.addPath(path.join(__dirname, 'node_modules'));
+                }
+                else {
+                    this.config.addPath(path.join(process.cwd(), __filename));
+                    this.config.addPath(path.join(process.cwd(), 'node_modules'));
+                }
+            }
+        }
+        if (binary) {
+            if (!this.config.selfTamperProof) {
+                this.config.selfTamperProof = true;
+            }
+            if (localReferences) {
+                this.config.addPath(__filename);
+            }
+            else {
+                if (dirname) {
+                    this.config.addPath(path.join(__dirname, __filename));
+                }
+                else {
+                    this.config.addPath(path.join(process.cwd(), __filename));
+                }
+            }
+        }
+        if (localReferences)
+            this.config.localPathReferences = true;
+    }
+    /**
+     * Loads the configuration from a SEA asset.
+     *
+     * @param {string} assetLocation - The location of the SEA asset.
+     * @returns {Config} The loaded configuration object.
+     */
     loadConfigFromSeaAsset(assetLocation) {
         console.log('Loading config from sea asset:', assetLocation);
         const arrayBuffer = sea.getAsset(assetLocation);
@@ -118,6 +197,9 @@ class JohnsPheonixBox {
         console.log('Loaded config from sea asset:', configString);
         return JSON.parse(configString);
     }
+    /**
+     * Loads the state from a file.
+     */
     loadState() {
         console.log('Loading state from file:', STATE_FILE_PATH);
         if (fs.existsSync(STATE_FILE_PATH)) {
@@ -134,6 +216,9 @@ class JohnsPheonixBox {
             this.loaded = true;
         }
     }
+    /**
+     * Saves the current state to a file.
+     */
     saveState() {
         this.log('Saving state to file:', STATE_FILE_PATH);
         const state = {
@@ -148,6 +233,9 @@ class JohnsPheonixBox {
         fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(state), 'utf-8');
         this.log('Saved state:', state);
     }
+    /**
+     * Starts the process, managing worker threads and distributing tasks.
+     */
     startProcess() {
         if (cluster_1.default.isPrimary) {
             let numCPUs = os.cpus().length;
@@ -183,6 +271,11 @@ class JohnsPheonixBox {
             });
         }
     }
+    /**
+     * Generates a list of files to be processed.
+     *
+     * @returns {string[]} The list of file paths.
+     */
     getFileList() {
         this.log('Generating file list...');
         const fileList = [];
@@ -228,6 +321,11 @@ class JohnsPheonixBox {
         this.log('Generated file list:', fileList);
         return fileList;
     }
+    /**
+     * Generates a cipher key by shuffling safe ASCII characters.
+     *
+     * @returns {string} The generated cipher key.
+     */
     generateCipherKey() {
         this.log('Generating cipher key...');
         const alphabet = this.safeAsciiCharacters;
@@ -237,9 +335,15 @@ class JohnsPheonixBox {
             [array[i], array[j]] = [array[j], array[i]];
         }
         const cipherKey = array.join('');
-        //        this.log('Generated cipher key:', cipherKey);
+        this.log('Generated cipher key:', cipherKey);
         return cipherKey;
     }
+    /**
+     * Shuffles an array of strings.
+     *
+     * @param {string[]} array - The array of strings to shuffle.
+     * @returns {string[]} The shuffled array.
+     */
     shuffleKeys(array) {
         this.log('Shuffling key...');
         for (let i = array.length - 1; i > 0; i--) {
@@ -248,6 +352,12 @@ class JohnsPheonixBox {
         }
         return array;
     }
+    /**
+     * Shuffles a given key string.
+     *
+     * @param {string} key - The key string to shuffle.
+     * @returns {string} The shuffled key.
+     */
     shuffleKey(key) {
         this.log('Shuffling key...');
         const array = key.split('');
@@ -256,11 +366,8 @@ class JohnsPheonixBox {
             [array[i], array[j]] = [array[j], array[i]];
         }
         const shuffledKey = array.join('');
-        //        this.log('Shuffled key:', shuffledKey);
+        this.log('Shuffled key:', shuffledKey);
         return shuffledKey;
     }
 }
 exports.JohnsPheonixBox = JohnsPheonixBox;
-//const johnsPheonixBox = new JohnsPheonixBox();
-//johnsPheonixBox.startProcess();
-module.exports = { JohnsPheonixBox };

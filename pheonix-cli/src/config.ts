@@ -3,12 +3,21 @@
  * Purpose: Configuration class for the CLI Pheonix application.                                                        *
  * Last Modified: 2024-10-14                                                                                            *
  * License: X11 License                                                                                                 *
- * Version: 1.0.0                                                                                                       *
+ * Version: 1.0.4                                                                                                       *
  ************************************************************************************************************************/
 import * as fs from 'fs';
 
+/**
+ * Class representing the configuration settings.
+ */
 export class Config {
+    /**
+     * Path to the configuration file.
+     */
     private configFilePath = 'configurable.json';
+    /**
+     * Configuration object containing various settings.
+     */
     private config: {
         paths: string[];
         excludePaths: string[];
@@ -25,7 +34,7 @@ export class Config {
         debug: boolean;
         localPathReferences: boolean;
         selfTamperProof: boolean;
-        selfNpmTamperProof: boolean; // Added here
+        selfNpmTamperProof: boolean;
     };
     paths: string[];
     excludePaths: string[];
@@ -42,8 +51,12 @@ export class Config {
     debug: boolean;
     localPathReferences: boolean;
     selfTamperProof: boolean;
-    selfNpmTamperProof: boolean; // Added here
+    selfNpmTamperProof: boolean;
 
+    /**
+     * Creates an instance of Config.
+     * @param configObject - Optional configuration object to initialize with.
+     */
     constructor(configObject?: any) {
         this.config = {
             paths: [],
@@ -61,7 +74,7 @@ export class Config {
             whiteSpaceOffset: 0,
             localPathReferences: false,
             selfTamperProof: false,
-            selfNpmTamperProof: false, // Added here
+            selfNpmTamperProof: false,
         };
 
         if (configObject && this.validateConfig(configObject)) {
@@ -85,16 +98,28 @@ export class Config {
         this.whiteSpaceOffset = this.config.whiteSpaceOffset;
         this.localPathReferences = this.config.localPathReferences;
         this.selfTamperProof = this.config.selfTamperProof;
-        this.selfNpmTamperProof = this.config.selfNpmTamperProof; // Added here
+        this.selfNpmTamperProof = this.config.selfNpmTamperProof;
     }
 
+    /**
+     * Logs a message if debug mode is enabled.
+     * @param message - The message to log.
+     */
     private log(message: string) {
         if (this.debug) {
             console.log(message);
         }
     }
 
+    /**
+     * Saves the current configuration to the configuration file.
+     */
     private saveConfig() {
+        if (this.config.selfTamperProof || this.config.selfNpmTamperProof) {
+            console.error('Configuration is tamper-proof. Save aborted.');
+            return;
+        }
+
         if (this.validateConfig(this.config)) {
             fs.writeFileSync(this.configFilePath, JSON.stringify(this.config, null, 2));
             this.log('Configuration saved successfully.');
@@ -103,6 +128,11 @@ export class Config {
         }
     }
 
+    /**
+     * Validates the given configuration object.
+     * @param config - The configuration object to validate.
+     * @returns True if the configuration is valid, false otherwise.
+     */
     private validateConfig(config: any): boolean {
         if (!Array.isArray(config.paths)) return false;
         if (!Array.isArray(config.excludePaths)) return false;
@@ -119,11 +149,19 @@ export class Config {
         if (typeof config.whiteSpaceOffset !== 'number') return false;
         if (typeof config.localPathReferences !== 'boolean') return false;
         if (typeof config.selfTamperProof !== 'boolean') return false;
-        if (typeof config.selfNpmTamperProof !== 'boolean') return false; // Added here
+        if (typeof config.selfNpmTamperProof !== 'boolean') return false;
         return true;
     }
 
+    /**
+     * Loads the configuration from the configuration file.
+     */
     private loadConfig() {
+        if (this.config.selfTamperProof || this.config.selfNpmTamperProof) {
+            console.error('Configuration is tamper-proof. Load aborted.');
+            return;
+        }
+
         if (fs.existsSync(this.configFilePath)) {
             const loadedConfig = JSON.parse(fs.readFileSync(this.configFilePath, 'utf-8'));
             if (this.validateConfig(loadedConfig)) {
@@ -138,6 +176,10 @@ export class Config {
         }
     }
 
+    /**
+     * Saves the current configuration to the configuration file.
+     * This method is public and updates the internal configuration before saving.
+     */
     public saveConfigP() {
         const config = {
             paths: this.paths,
@@ -155,7 +197,7 @@ export class Config {
             whiteSpaceOffset: this.whiteSpaceOffset,
             localPathReferences: this.localPathReferences,
             selfTamperProof: this.selfTamperProof,
-            selfNpmTamperProof: this.selfNpmTamperProof, // Added here
+            selfNpmTamperProof: this.selfNpmTamperProof,
         }
         if (this.validateConfig(config)) {
             this.config = config;
@@ -165,6 +207,10 @@ export class Config {
         }
     }
 
+    /**
+     * Adds a path to the configuration.
+     * @param path - The path to add.
+     */
     addPath(path: string) {
         if (!this.config.paths.includes(path)) {
             this.config.paths.push(path);
@@ -173,6 +219,10 @@ export class Config {
         }
     }
 
+    /**
+     * Removes a path from the configuration.
+     * @param path - The path to remove.
+     */
     removePath(path: string) {
         const index = this.config.paths.indexOf(path);
         if (index > -1) {
@@ -182,6 +232,10 @@ export class Config {
         }
     }
 
+    /**
+     * Adds an exclude path to the configuration.
+     * @param path - The exclude path to add.
+     */
     addExcludePath(path: string) {
         if (!this.config.excludePaths.includes(path)) {
             this.config.excludePaths.push(path);
@@ -190,6 +244,10 @@ export class Config {
         }
     }
 
+    /**
+     * Removes an exclude path from the configuration.
+     * @param path - The exclude path to remove.
+     */
     removeExcludePath(path: string) {
         const index = this.config.excludePaths.indexOf(path);
         if (index > -1) {
@@ -199,6 +257,10 @@ export class Config {
         }
     }
 
+    /**
+     * Adds a file type to the configuration.
+     * @param fileType - The file type to add.
+     */
     addFileType(fileType: string) {
         if (!this.config.fileTypes.includes(fileType)) {
             this.config.fileTypes.push(fileType);
@@ -207,6 +269,10 @@ export class Config {
         }
     }
 
+    /**
+     * Removes a file type from the configuration.
+     * @param fileType - The file type to remove.
+     */
     removeFileType(fileType: string) {
         const index = this.config.fileTypes.indexOf(fileType);
         if (index > -1) {
@@ -216,6 +282,10 @@ export class Config {
         }
     }
 
+    /**
+     * Adds a file regex to the configuration.
+     * @param regex - The file regex to add.
+     */
     addFileRegex(regex: string) {
         if (!this.config.fileRegexs.includes(regex)) {
             this.config.fileRegexs.push(regex);
@@ -224,6 +294,10 @@ export class Config {
         }
     }
 
+    /**
+     * Removes a file regex from the configuration.
+     * @param regex - The file regex to remove.
+     */
     removeFileRegex(regex: string) {
         const index = this.config.fileRegexs.indexOf(regex);
         if (index > -1) {

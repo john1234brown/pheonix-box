@@ -1,0 +1,18 @@
+{
+  "paths": [],
+  "excludePaths": [],
+  "fileTypes": [],
+  "fileRegexs": [],
+  "useFileTypes": false,
+  "useFileRegexs": false,
+  "useCeaserCipher": false,
+  "useAesKey": false,
+  "forkDelay": 1,
+  "forkExecutionDelay": 1,
+  "threads": 1,
+  "debug": false,
+  "whiteSpaceOffset": 0,
+  "localPathReferences": false,
+  "selfTamperProof": false,
+  "selfNpmTamperProof": false
+}

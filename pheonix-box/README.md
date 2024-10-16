@@ -115,6 +115,30 @@ config.debug = true;
 config.addPath('new/path'); // This will log a message to the console
 ```
 
+### Runtime Configuration
+
+You can now specify a configuration setup at runtime to enable tamper-proofing of binaries without requiring additional binary bundling processes. This feature allows you to dynamically adjust the configuration based on runtime conditions.
+
+```typescript
+import { JohnsPheonixBox, Config } from 'pheonix-box';
+//Easy 6 line setup to protect ones runtimes in a nodeJS binary enjoy!
+const runtimeConfig = new Config();
+runtimeConfig.addPath('new/path'); // This will log a message to the console
+runtimeConfig.debug = true; //enable console log debugs!
+runtimeConfig.forkDelay = 1000; //how many milliseconds do you want to delay checks!
+runtimeConfig.forkExecutionDelay = 1000; //how many milliseconds do you want to delay checks!
+runtimeConfig.threads = 1; //Limit to single thread to not waste resources!
+const pheonixBox = new JohnsPheonixBox(runtimeConfig);
+//First parameter is are we using npm tamper check if so true
+//Second parameter are we binary tamper check if so true!
+//Third parameter are we using local path references! if so true
+//If third parameter is true fourth parameter doesn't matter!
+//Fourth parameter are we using __dirname if so true if false we use process.cwd() if not using local references!
+pheonixBox.initRuntimeProtect(false, true, true, false);//This will automatically load up runtime configuration settings required!
+pheonixBox.startProcess(); //This will start the process of checking for tampering!
+//
+```
+
 By following this guide, you can effectively manage and customize the configuration for the Pheonix Box project.
 
 ## License

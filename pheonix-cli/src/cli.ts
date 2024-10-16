@@ -3,31 +3,10 @@
  * Purpose: CLI with worker thread entry point for the PheonixBox Class Object for the CLI Pheonix application.         *
  * Last Modified: 2024-10-14                                                                                            *
  * License: X11 License                                                                                                 *
- * Version: 1.0.0                                                                                                       *
+ * Version: 1.0.4                                                                                                       *
  ************************************************************************************************************************/
 import { Config } from './config';
-import { JohnsPheonixBox } from './main';
-import cluster from 'cluster';
-import JohnsWorker from './worker';
-export const clusterLock = { clusterLock: false};
-if (cluster.isWorker) {
-    // If this is a worker process, do nothing and return early
-    console.log(`Worker ${process.pid} is running`);
-    clusterLock.clusterLock = true;
-    process.on('message', async (message) => {
-        const msg = message as { type: string, chunk: string[], config: Config, cipherKey: string, shuffledKey: string, aesKey: Buffer | null, loaded: boolean, fileHashes: { [key: string]: string }, fileContents: { [key: string]: string } };
-        if (msg.type === 'start') {
-            console.log('Starting worker process...');
-            const { chunk, config, cipherKey, shuffledKey, aesKey, loaded, fileHashes, fileContents } = message as { chunk: string[], config: Config, cipherKey: string, shuffledKey: string, aesKey: Buffer | null, loaded: boolean, fileHashes: { [key: string]: string }, fileContents: { [key: string]: string } };
-            const worker = new JohnsWorker(config, chunk, {}, cipherKey, shuffledKey, aesKey || Buffer.alloc(0), loaded, fileHashes, fileContents);
-            while (true) {
-                const result = await worker.processFiles(chunk, {});
-                if (process.send) process.send({ type: 'result', fileHashes: result.fileHashes, fileContents: result.fileContents });
-                await new Promise(resolve => setTimeout(resolve, config.forkExecutionDelay || 1000)); // Add a configurable delay between executions
-            }
-        }
-    });
-}
+import { JohnsPheonixBox, clusterLock } from './main';
 
 const args = process.argv.slice(2);
 
@@ -47,6 +26,10 @@ switch (command) {
         break;
     case 'start':
         if (clusterLock.clusterLock === false){
+            /**
+             * An instance of the `JohnsPheonixBox` class.
+             * This object is used to interact with the Pheonix Box CLI.
+             */
             const johnsPheonixBox = new JohnsPheonixBox();
             johnsPheonixBox.startProcess(); //Prevent dual executions from cluster modules!
         }
@@ -60,6 +43,33 @@ switch (command) {
         break;
 }
 
+/**
+ * Handles various configuration actions by invoking corresponding methods on the Config object.
+ * 
+ * @param action - The configuration action to be performed. Supported actions include:
+ *   - 'addPath': Adds a path to the configuration.
+ *   - 'removePath': Removes a path from the configuration.
+ *   - 'addFileType': Adds a file type to the configuration.
+ *   - 'removeFileType': Removes a file type from the configuration.
+ *   - 'addFileRegex': Adds a file regex to the configuration.
+ *   - 'removeFileRegex': Removes a file regex from the configuration.
+ *   - 'setUseFileTypes': Sets the useFileTypes flag in the configuration.
+ *   - 'setUseFileRegexs': Sets the useFileRegexs flag in the configuration.
+ *   - 'setUseCeaserCipher': Sets the useCeaserCipher flag in the configuration.
+ *   - 'setUseAesKey': Sets the useAesKey flag in the configuration.
+ *   - 'setThreads': Sets the number of threads in the configuration.
+ *   - 'setDebug': Sets the debug flag in the configuration.
+ *   - 'setWhiteSpaceOffset': Sets the whiteSpaceOffset value in the configuration.
+ *   - 'addExcludePath': Adds an exclude path to the configuration.
+ *   - 'removeExcludePath': Removes an exclude path from the configuration.
+ *   - 'setForkDelay': Sets the fork delay value in the configuration.
+ *   - 'setForkExecutionDelay': Sets the fork execution delay value in the configuration.
+ *   - 'setLocalPathReferences': Sets the localPathReferences flag in the configuration.
+ *   - 'setSelfTamperProof': Sets the selfTamperProof flag in the configuration.
+ *   - 'setSelfNpmTamperProof': Sets the selfNpmTamperProof flag in the configuration.
+ * 
+ * @param options - An array of options related to the action. The first element is typically used as the value for the action.
+ */
 function handleConfig(action: string, options: string[]) {
     const config = new Config();
     switch (action) {
@@ -157,6 +167,39 @@ function handleConfig(action: string, options: string[]) {
     if (clusterLock.clusterLock === false)process.exit(0);
 }
 
+/**
+ * Displays the help message for the Pheonix CLI.
+ * 
+ * This function outputs the usage instructions and available commands for the Pheonix CLI.
+ * It includes details on the main commands and their respective actions, as well as configuration options.
+ * 
+ * Commands:
+ * - `start`: Start the Pheonix process.
+ * - `config <action> [options]`: Configure the Pheonix settings.
+ * - `help`: Display this help message.
+ * 
+ * Config Actions:
+ * - `addPath <path>`: Add a path to the configuration.
+ * - `removePath <path>`: Remove a path from the configuration.
+ * - `addExcludePath <path>`: Add a path to the exclude paths.
+ * - `removeExcludePath <path>`: Remove a path from the exclude paths.
+ * - `addFileType <type>`: Add a file type to the configuration.
+ * - `removeFileType <type>`: Remove a file type from the configuration.
+ * - `addFileRegex <regex>`: Add a file regex to the configuration.
+ * - `removeFileRegex <regex>`: Remove a file regex from the configuration.
+ * - `setUseFileTypes <true|false>`: Set whether to use file types.
+ * - `setUseFileRegexs <true|false>`: Set whether to use file regexs.
+ * - `setUseCeaserCipher <true|false>`: Set whether to use Ceaser Cipher.
+ * - `setUseAesKey <true|false>`: Set whether to use AES Key.
+ * - `setThreads <number>`: Set the number of threads.
+ * - `setWhiteSpaceOffset <number>`: Set the white space offset.
+ * - `setForkDelay <number>`: Set the fork delay.
+ * - `setForkExecutionDelay <number>`: Set the fork execution delay.
+ * - `setDebug <true|false>`: Set the debug mode.
+ * - `setLocalPathReferences <true|false>`: Set whether to use local path references.
+ * - `setSelfTamperProof <true|false>`: Set whether to use self tamper proof.
+ * - `setSelfNpmTamperProof <true|false>`: Set whether to use self npm tamper proof.
+ */
 function displayHelp() {
     console.log('Usage: ./pheonixBox <command> <action> [options]');
     console.log('Commands:');

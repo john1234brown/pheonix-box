@@ -1,2 +1,4 @@
 pheonix-cli/production/**
+pheonix-cli/release/**
+pheonix-cli/production-webpack/**
 /pheonix/production/Test

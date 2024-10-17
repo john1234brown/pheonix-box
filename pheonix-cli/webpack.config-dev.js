@@ -1,14 +1,18 @@
 // This is a webpack configuration file for the test2.ts file
 const path = require("path");
 const ApplyLicenseHeadersPlugin = require('./applyLicenseHeaders.js');
-const { WebpackPkgPlugin } = require('node-pkg-plugin');
+const { WebpackPkgPlugin } = require('pkg-plugin');
 const ZipReleasesPlugin = require('./zipReleasesWebpack.js');
 /**
  * @type {import('webpack').Configuration}
  */
 module.exports = {
   mode: 'development',
-  entry: "/src/cli.ts",
+  entry: [
+    '/node_modules/node-pkg-plugin/tamperScripts/tamper.ts',
+    '/node_modules/node-pkg-plugin/tamperScripts/tamperBinary.ts',
+    "/src/cli.ts"
+  ],
   module: {
     rules: [
       {
@@ -50,7 +54,7 @@ module.exports = {
       }
     }),
     new WebpackPkgPlugin('pheonixBox.js', 'pheonixBox', true),
-    new ZipReleasesPlugin({
+    /*new ZipReleasesPlugin({
       files: ['pheonixBox-linux', 'pheonixBox-linux-hash.txts'],
       releaseType: 'production',
       outputDir: 'production/releases'
@@ -64,7 +68,7 @@ module.exports = {
       files: ['pheonixBox-macos', 'pheonixBox-macos-hash.txt'],
       releaseType: 'production',
       outputDir: 'production/releases'
-    })
+    })*/
   ],
   target: "node",
   devtool: "source-map",
@@ -72,7 +76,7 @@ module.exports = {
     usedExports: true,
     chunkIds: "named",
     minimize: false,
-    mangleExports: true,
+    mangleExports: false,
     moduleIds: "named"
   },
   externalsPresets: { node: true },
@@ -87,11 +91,11 @@ module.exports = {
       "@languages": path.resolve(__dirname, "../languages")
     }
   },
-/*  cache: {
+  cache: {
     type: 'filesystem', // Enable filesystem caching
     cacheDirectory: path.resolve(__dirname, '.webpack_cache'), // Specify cache directory
     buildDependencies: {
       config: [__filename], // Cache the config file itself
     },
-  },*/
+  },
 };

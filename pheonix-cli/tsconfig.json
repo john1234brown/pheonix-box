@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "module": "CommonJS",
+    "module": "commonjs",
     "target": "ESNext",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "declaration": true,
-    "declarationDir": "./types",
+    "declaration": false,
     "skipLibCheck": false,
     "strictNullChecks": true,
     "noImplicitAny": true,

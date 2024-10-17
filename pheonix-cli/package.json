@@ -35,7 +35,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "node-pkg-plugin": "^1.0.7",
+    "pkg-plugin": "^2.0.0",
     "typescript": "^5.6.2"
   },
   "license": "X11"

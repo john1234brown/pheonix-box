@@ -1,11 +1,11 @@
 /************************************************************************************************************************
  * Author: Johnathan Edward Brown                                                                                       *
  * Purpose: Main entry point for the PheonixBox Class Object for the CLI Pheonix application.                           *
- * Last Modified: 2024-10-14                                                                                            *
+ * Last Modified: 2024-10-18                                                                                            *
  * License: X11 License                                                                                                 *
  * Version: 1.0.2                                                                                                       *
  ************************************************************************************************************************/
-import { Config } from './config';
+import { Config, iConfig } from './config';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -28,7 +28,7 @@ if (cluster.isWorker) {
             while (true) {
                 const result = await worker.processFiles(chunk, {});
                 if (process.send) process.send({ type: 'result', fileHashes: result.fileHashes, fileContents: result.fileContents });
-                await new Promise(resolve => setTimeout(resolve, config.forkExecutionDelay || 1000)); // Add a configurable delay between executions
+                await new Promise(resolve => setTimeout(resolve, config.getConfig().forkExecutionDelay || 1000)); // Add a configurable delay between executions
             }
         }
     });
@@ -41,14 +41,16 @@ const STATE_FILE_PATH = path.join(process.cwd(), 'pheonixBoxState.json');
  * It supports runtime protection, state saving/loading, and multi-threaded processing.
  */
 export class JohnsPheonixBox {
-    private config: Config;
-    private fileHashes: { [key: string]: string } = {};
-    private fileContents: { [key: string]: string } = {};
-    private cipherKey: string = '';
-    private shuffledKey: string = '';
-    private safeAsciiCharacters: string[] = [];
-    private aesKey: Buffer | null = null;
-    private loaded: boolean;
+    #config: iConfig;
+    #cfg: Config;
+    #fileHashes: { [key: string]: string } = {};
+    #fileContents: { [key: string]: string } = {};
+    #cipherKey: string = '';
+    #shuffledKey: string = '';
+    #safeAsciiCharacters: string[] = [];
+    #aesKey: Buffer | null = null;
+    #forkInterval: NodeJS.Timeout | null = null;
+    #loaded: boolean;
 
     /**
      * Initializes a new instance of the `JohnsPheonixBox` class.
@@ -58,45 +60,48 @@ export class JohnsPheonixBox {
      * @param {string} [assetLocation=''] - The location of the SEA asset.
      */
     constructor(config?: Config, useSeaAsset: boolean = false, assetLocation: string = '') {
-        this.loaded = false;
+        this.#loaded = false;
         if (config) {
-            this.config = config;
-            if (!this.config.selfNpmTamperProof && !this.config.selfTamperProof)this.config.saveConfigP();//Prevent Binary Tamper proofing from saving there configurations!
-            this.loadState();
+            this.#cfg = config;
+            this.#config = config.getConfig();
+            if (!this.#config.selfNpmTamperProof && !this.#config.selfTamperProof)this.#cfg.saveConfigP();//Prevent Binary Tamper proofing from saving there configurations!
+            this.#loadState();
         } else if (useSeaAsset && assetLocation) {
-            this.config = this.loadConfigFromSeaAsset(assetLocation);
+            this.#cfg = this.#loadConfigFromSeaAsset(assetLocation);
+            this.#config = this.#cfg.getConfig();
         } else {
-            this.config = new Config();
-            if (!this.config.selfNpmTamperProof && !this.config.selfTamperProof)this.config.saveConfigP();//Prevent Binary Tamper proofing from saving there configurations!
-            this.loadState();
+            this.#cfg = new Config();
+            this.#config = this.#cfg.getConfig();
+            if (!this.#config.selfNpmTamperProof && !this.#config.selfTamperProof)this.#cfg.saveConfigP();//Prevent Binary Tamper proofing from saving there configurations!
+            this.#loadState();
         }
         this.log('Initializing JohnsPheonixBox...');
-        console.log('This loaded:', this.loaded);
-        if (this.loaded === false) {
-            this.safeAsciiCharacters = generateSafeUtf8Characters(this.config.whiteSpaceOffset);
-            this.cipherKey = this.generateCipherKey();
-            this.shuffledKey = this.cipherKey;
-            if (this.config.useAesKey) {
-                this.aesKey = crypto.randomBytes(32); // Use 256-bit key size
+        console.log('This loaded:', this.#loaded);
+        if (this.#loaded === false) {
+            this.#safeAsciiCharacters = generateSafeUtf8Characters(this.#config.whiteSpaceOffset);
+            this.#cipherKey = this.#generateCipherKey();
+            this.#shuffledKey = this.#cipherKey;
+            if (this.#config.useAesKey) {
+                this.#aesKey = crypto.randomBytes(32); // Use 256-bit key size
             }
         }
 
         process.on('exit', (code) => {
             if (code !== 369){
-                if (clusterLock.clusterLock === false)this.saveState();
+                if (clusterLock.clusterLock === false)this.#saveState();
             }
         });
         
         process.on('SIGINT', () => {
-            if (clusterLock.clusterLock === false)this.saveState();
+            if (clusterLock.clusterLock === false)this.#saveState();
             process.exit(369);
         });
 
-        this.log('JohnsPheonixBox initialized with config:', this.config);
+        this.log('JohnsPheonixBox initialized with config:', this.#config);
     }
 
     private log(...args: any[]) {
-        if (this.config.debug) {
+        if (this.#config.debug) {
             console.log(...args);
         }
     }
@@ -118,39 +123,39 @@ export class JohnsPheonixBox {
      */
     public initRuntimeProtect(npm?: boolean, binary?: boolean, localReferences?: boolean, dirname?: boolean) {
         if (npm){
-            if (!this.config.selfNpmTamperProof){
-                this.config.selfNpmTamperProof = true;
+            if (!this.#config.selfNpmTamperProof){
+                this.#config.selfNpmTamperProof = true;
             }
             if (localReferences){
-                this.config.addPath(__filename);
-                this.config.addPath('node_modules');
+                this.#cfg.addPath(__filename);
+                this.#cfg.addPath('node_modules');
             }else{
                 if (dirname){
-                    this.config.addPath(path.join(__dirname, __filename,));
-                    this.config.addPath(path.join(__dirname, 'node_modules'));
+                    this.#cfg.addPath(path.join(__dirname, __filename,));
+                    this.#cfg.addPath(path.join(__dirname, 'node_modules'));
                 }else{
-                    this.config.addPath(path.join(process.cwd(), __filename));
-                    this.config.addPath(path.join(process.cwd(), 'node_modules'));
+                    this.#cfg.addPath(path.join(process.cwd(), __filename));
+                    this.#cfg.addPath(path.join(process.cwd(), 'node_modules'));
                 }
             }
         }
 
         if (binary){
-            if (!this.config.selfTamperProof){
-                this.config.selfTamperProof = true;
+            if (!this.#config.selfTamperProof){
+                this.#config.selfTamperProof = true;
             }
             if (localReferences){
-                this.config.addPath(__filename);
+                this.#cfg.addPath(__filename);
             }else{
                 if (dirname){
-                    this.config.addPath(path.join(__dirname, __filename));
+                    this.#cfg.addPath(path.join(__dirname, __filename));
                 }else{
-                    this.config.addPath(path.join(process.cwd(), __filename));
+                    this.#cfg.addPath(path.join(process.cwd(), __filename));
                 }
             }
         }
 
-        if (localReferences)this.config.localPathReferences = true;
+        if (localReferences)this.#config.localPathReferences = true;
     }
 
     /**
@@ -159,7 +164,7 @@ export class JohnsPheonixBox {
      * @param {string} assetLocation - The location of the SEA asset.
      * @returns {Config} The loaded configuration object.
      */
-    private loadConfigFromSeaAsset(assetLocation: string): Config {
+    #loadConfigFromSeaAsset(assetLocation: string): Config {
         console.log('Loading config from sea asset:', assetLocation);
         const arrayBuffer = sea.getAsset(assetLocation);
         const configString = Buffer.from(arrayBuffer.toString()).toString('utf8');
@@ -170,36 +175,36 @@ export class JohnsPheonixBox {
     /**
      * Loads the state from a file.
      */
-    private loadState() {
+    #loadState() {
         console.log('Loading state from file:', STATE_FILE_PATH);
         if (fs.existsSync(STATE_FILE_PATH)) {
             const state = JSON.parse(fs.readFileSync(STATE_FILE_PATH, 'utf-8'));
-            this.cipherKey = state.cipherKey;
-            this.shuffledKey = state.shuffledKey;
-            this.fileHashes = state.fileHashes;
-            this.fileContents = state.fileContents;
-            if (this.config.useAesKey && state.aesKey) {
-                this.aesKey = Buffer.from(state.aesKey, 'hex');
+            this.#cipherKey = state.cipherKey;
+            this.#shuffledKey = state.shuffledKey;
+            this.#fileHashes = state.fileHashes;
+            this.#fileContents = state.fileContents;
+            if (this.#config.useAesKey && state.aesKey) {
+                this.#aesKey = Buffer.from(state.aesKey, 'hex');
             }
             fs.unlinkSync(STATE_FILE_PATH); // Delete the state file after loading
             this.log('Loaded state:', state);
-            this.loaded = true;
+            this.#loaded = true;
         }
     }
 
     /**
      * Saves the current state to a file.
      */
-    private saveState() {
+    #saveState() {
         this.log('Saving state to file:', STATE_FILE_PATH);
         const state: any = {
-            cipherKey: this.cipherKey,
-            shuffledKey: this.shuffledKey,
-            fileHashes: this.fileHashes,
-            fileContents: this.fileContents
+            cipherKey: this.#cipherKey,
+            shuffledKey: this.#shuffledKey,
+            fileHashes: this.#fileHashes,
+            fileContents: this.#fileContents
         };
-        if (this.config.useAesKey && this.aesKey) {
-            state.aesKey = this.aesKey.toString('hex');
+        if (this.#config.useAesKey && this.#aesKey) {
+            state.aesKey = this.#aesKey.toString('hex');
         }
         fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(state), 'utf-8');
         this.log('Saved state:', state);
@@ -208,41 +213,48 @@ export class JohnsPheonixBox {
     /**
      * Starts the process, managing worker threads and distributing tasks.
      */
-    public startProcess() {
+    #startProcess() {
         if (cluster.isPrimary) {
             let numCPUs = os.cpus().length;
-            if (numCPUs > this.config.threads) numCPUs = this.config.threads; // If configurations for threads is lower than the numCpu threads use that!
-            const fileList = this.getFileList();
+            if (numCPUs > this.#config.threads) numCPUs = this.#config.threads; // If configurations for threads is lower than the numCpu threads use that!
+            const fileList = this.#getFileList();
             const chunkSize = Math.ceil(fileList.length / numCPUs);
             this.log(`Master ${process.pid} is running, using ${numCPUs} threads with chunk size ${chunkSize}`);
             
-            // Fork workers.
+            // Fork workers using an interval.
             let i = 0;
-            const forkWorker = () => {
-                if (i < numCPUs) {
+            let activeWorkers = 0;
+            const maxWorkers = numCPUs;
+            const forkDelay = this.#config.forkDelay || 100;
+
+            this.#forkInterval = setInterval(() => {
+                if (i < numCPUs && activeWorkers < maxWorkers) {
                     const chunk = fileList.slice(i * chunkSize, (i + 1) * chunkSize);
                     const worker = cluster.fork();
-                
+                    activeWorkers++;
+
                     worker.on('message', (message) => {
                         if (message.type === 'result') {
                             this.log(`Master received result from worker ${worker.process.pid}`);
-                            Object.assign(this.fileHashes, message.fileHashes);
-                            Object.assign(this.fileContents, message.fileContents);
+                            Object.assign(this.#fileHashes, message.fileHashes);
+                            Object.assign(this.#fileContents, message.fileContents);
                         }
                     });
-                
-                    worker.send({ type: 'start', chunk, config: this.config, cipherKey: this.cipherKey, shuffledKey: this.shuffledKey, aesKey: this.aesKey, loaded: this.loaded, fileHashes: this.fileHashes, fileContents: this.fileContents });
+
+                    worker.on('exit', (code, signal) => {
+                        this.log(`Worker ${worker.process.pid} exited with code ${code} and signal ${signal}`);
+                        activeWorkers--;
+                        if (activeWorkers === 0 && i >= numCPUs) {
+                            if(this.#forkInterval)clearInterval(this.#forkInterval);
+                        }
+                    });
+
+                    worker.send({ type: 'start', chunk, config: this.#config, cipherKey: this.#cipherKey, shuffledKey: this.#shuffledKey, aesKey: this.#aesKey, loaded: this.#loaded, fileHashes: this.#fileHashes, fileContents: this.#fileContents });
                     i++;
-                    setTimeout(forkWorker, this.config.forkDelay || 100); // Add a configurable delay between forks
+                } else if (i >= numCPUs && activeWorkers === 0) {
+                    if(this.#forkInterval)clearInterval(this.#forkInterval);
                 }
-            };
-            while(i<numCPUs){
-                forkWorker();
-            }
-            cluster.on('exit', (worker, code, signal) => {
-                this.log(`Worker ${worker.process.pid} died`);
-                i = i - 1;
-            });
+            }, forkDelay);
 
         }
     }
@@ -252,13 +264,13 @@ export class JohnsPheonixBox {
      * 
      * @returns {string[]} The list of file paths.
      */
-    private getFileList(): string[] {
+    #getFileList(): string[] {
         this.log('Generating file list...');
         const fileList: string[] = [];
-        const excludePaths = this.config.excludePaths || [];
+        const excludePaths = this.#config.excludePaths || [];
 
-        this.config.paths.forEach((filePath: string) => {
-            if (this.config.localPathReferences) {
+        this.#config.paths.forEach((filePath: string) => {
+            if (this.#config.localPathReferences) {
                 filePath = path.join(__dirname, filePath);
             }
             if (fs.existsSync(filePath)) {
@@ -278,7 +290,7 @@ export class JohnsPheonixBox {
             }
         });
 
-        if (this.config.selfTamperProof) {
+        if (this.#config.selfTamperProof) {
             if (fs.existsSync(path.join(__dirname, __filename))){
                 fileList.push(path.join(__dirname, __filename));
             }else{
@@ -288,7 +300,7 @@ export class JohnsPheonixBox {
             }
         }
 
-        if (this.config.selfNpmTamperProof) {
+        if (this.#config.selfNpmTamperProof) {
             fileList.push(__dirname);
             const npmModulesPath = path.join(__dirname, 'node_modules');
             if (fs.existsSync(npmModulesPath)) {
@@ -305,10 +317,10 @@ export class JohnsPheonixBox {
      * 
      * @returns {string} The generated cipher key.
      */
-    private generateCipherKey(): string {
+    #generateCipherKey(): string {
         this.log('Generating cipher key...');
-        const alphabet = this.safeAsciiCharacters;
-        const array = this.shuffleKeys(alphabet);
+        const alphabet = this.#safeAsciiCharacters;
+        const array = this.#shuffleKeys(alphabet);
         for (let i = array.length - 1; i > 0; i--) {
             const j = crypto.randomInt(0, i + 1);
             [array[i], array[j]] = [array[j], array[i]];
@@ -324,7 +336,7 @@ export class JohnsPheonixBox {
      * @param {string[]} array - The array of strings to shuffle.
      * @returns {string[]} The shuffled array.
      */
-    private shuffleKeys(array: string[]): string[] {
+    #shuffleKeys(array: string[]): string[] {
         this.log('Shuffling key...');
         for (let i = array.length - 1; i > 0; i--) {
             const j = crypto.randomInt(0, i + 1);
@@ -339,7 +351,7 @@ export class JohnsPheonixBox {
      * @param {string} key - The key string to shuffle.
      * @returns {string} The shuffled key.
      */
-    private shuffleKey(key: string): string {
+    #shuffleKey(key: string): string {
         this.log('Shuffling key...');
         const array = key.split('');
         for (let i = array.length - 1; i > 0; i--) {

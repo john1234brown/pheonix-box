@@ -1,6 +1,6 @@
 {
   "name": "pheonix-box-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": {
     "name": "Johnathan Edward Brown",
     "email": "sierrajohn1234brown@gmail.com",
@@ -16,6 +16,7 @@
   },
   "description": "This is a Typescript -> Webpacked -> Obfuscated -> Binary Project Builder Along with exported access to the JohnsPheonixBox class object.",
   "main": "production-npm/pheonixBox.js",
+  "types": "production-npm/pheonixBox.d.ts",
   "type": "module",
   "scripts": {
     "build": "tsc",

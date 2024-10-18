@@ -48,7 +48,7 @@ function requireConfig () {
 	/************************************************************************************************************************
 	 * Author: Johnathan Edward Brown                                                                                       *
 	 * Purpose: Configuration class for the CLI Pheonix application.                                                        *
-	 * Last Modified: 2024-10-14                                                                                            *
+	 * Last Modified: 2024-10-18                                                                                            *
 	 * License: X11 License                                                                                                 *
 	 * Version: 1.0.2                                                                                                       *
 	 ************************************************************************************************************************/
@@ -60,33 +60,34 @@ function requireConfig () {
 	    /**
 	     * Path to the configuration file.
 	     */
-	    configFilePath = 'configurable.json';
+	    #configFilePath = 'configurable.json';
 	    /**
 	     * Configuration object containing various settings.
 	     */
-	    config;
-	    paths;
-	    excludePaths;
-	    fileTypes;
-	    fileRegexs;
-	    useFileTypes;
-	    useFileRegexs;
-	    useCeaserCipher;
-	    useAesKey;
-	    forkDelay;
-	    forkExecutionDelay;
-	    threads;
-	    whiteSpaceOffset;
-	    debug;
-	    localPathReferences;
-	    selfTamperProof;
-	    selfNpmTamperProof;
+	    #config;
+	    #paths;
+	    #excludePaths;
+	    #fileTypes;
+	    #fileRegexs;
+	    #useFileTypes;
+	    #useFileRegexs;
+	    #useCeaserCipher;
+	    #useAesKey;
+	    #forkDelay;
+	    #forkExecutionDelay;
+	    #threads;
+	    #whiteSpaceOffset;
+	    #debug;
+	    #localPathReferences;
+	    #selfTamperProof;
+	    #selfNpmTamperProof;
+	    #configLock = false;
 	    /**
 	     * Creates an instance of Config.
 	     * @param configObject - Optional configuration object to initialize with.
 	     */
 	    constructor(configObject) {
-	        this.config = {
+	        this.#config = {
 	            paths: [],
 	            excludePaths: [],
 	            fileTypes: [],
@@ -104,48 +105,49 @@ function requireConfig () {
 	            selfTamperProof: false,
 	            selfNpmTamperProof: false,
 	        };
-	        if (configObject && this.validateConfig(configObject)) {
-	            this.config = configObject;
+	        if (configObject && this.#validateConfig(configObject)) {
+	            this.#configLock = true;
+	            this.#config = configObject;
 	        }
 	        else {
-	            this.loadConfig();
+	            this.#loadConfig();
 	        }
-	        this.paths = this.config.paths;
-	        this.excludePaths = this.config.excludePaths;
-	        this.fileTypes = this.config.fileTypes;
-	        this.fileRegexs = this.config.fileRegexs;
-	        this.useFileRegexs = this.config.useFileRegexs;
-	        this.useFileTypes = this.config.useFileTypes;
-	        this.useCeaserCipher = this.config.useCeaserCipher;
-	        this.useAesKey = this.config.useAesKey;
-	        this.forkDelay = this.config.forkDelay;
-	        this.forkExecutionDelay = this.config.forkExecutionDelay;
-	        this.threads = this.config.threads;
-	        this.debug = this.config.debug;
-	        this.whiteSpaceOffset = this.config.whiteSpaceOffset;
-	        this.localPathReferences = this.config.localPathReferences;
-	        this.selfTamperProof = this.config.selfTamperProof;
-	        this.selfNpmTamperProof = this.config.selfNpmTamperProof;
+	        this.#paths = this.#config.paths;
+	        this.#excludePaths = this.#config.excludePaths;
+	        this.#fileTypes = this.#config.fileTypes;
+	        this.#fileRegexs = this.#config.fileRegexs;
+	        this.#useFileRegexs = this.#config.useFileRegexs;
+	        this.#useFileTypes = this.#config.useFileTypes;
+	        this.#useCeaserCipher = this.#config.useCeaserCipher;
+	        this.#useAesKey = this.#config.useAesKey;
+	        this.#forkDelay = this.#config.forkDelay;
+	        this.#forkExecutionDelay = this.#config.forkExecutionDelay;
+	        this.#threads = this.#config.threads;
+	        this.#debug = this.#config.debug;
+	        this.#whiteSpaceOffset = this.#config.whiteSpaceOffset;
+	        this.#localPathReferences = this.#config.localPathReferences;
+	        this.#selfTamperProof = this.#config.selfTamperProof;
+	        this.#selfNpmTamperProof = this.#config.selfNpmTamperProof;
 	    }
 	    /**
 	     * Logs a message if debug mode is enabled.
 	     * @param message - The message to log.
 	     */
 	    log(message) {
-	        if (this.debug) {
+	        if (this.#debug) {
 	            console.log(message);
 	        }
 	    }
 	    /**
 	     * Saves the current configuration to the configuration file.
 	     */
-	    saveConfig() {
-	        if (this.config.selfTamperProof || this.config.selfNpmTamperProof) {
+	    #saveConfig() {
+	        if (this.#config.selfTamperProof || this.#config.selfNpmTamperProof) {
 	            console.error('Configuration is tamper-proof. Save aborted.');
 	            return;
 	        }
-	        if (this.validateConfig(this.config)) {
-	            fs.writeFileSync(this.configFilePath, JSON.stringify(this.config, null, 2));
+	        if (this.#validateConfig(this.#config)) {
+	            fs.writeFileSync(this.#configFilePath, JSON.stringify(this.#config, null, 2));
 	            this.log('Configuration saved successfully.');
 	        }
 	        else {
@@ -157,7 +159,7 @@ function requireConfig () {
 	     * @param config - The configuration object to validate.
 	     * @returns True if the configuration is valid, false otherwise.
 	     */
-	    validateConfig(config) {
+	    #validateConfig(config) {
 	        if (!Array.isArray(config.paths))
 	            return false;
 	        if (!Array.isArray(config.excludePaths))
@@ -195,24 +197,24 @@ function requireConfig () {
 	    /**
 	     * Loads the configuration from the configuration file.
 	     */
-	    loadConfig() {
-	        if (this.config.selfTamperProof || this.config.selfNpmTamperProof) {
+	    #loadConfig() {
+	        if (this.#config.selfTamperProof || this.#config.selfNpmTamperProof) {
 	            console.error('Configuration is tamper-proof. Load aborted.');
 	            return;
 	        }
-	        if (fs.existsSync(this.configFilePath)) {
-	            const loadedConfig = JSON.parse(fs.readFileSync(this.configFilePath, 'utf-8'));
-	            if (this.validateConfig(loadedConfig)) {
-	                this.config = loadedConfig;
+	        if (fs.existsSync(this.#configFilePath)) {
+	            const loadedConfig = JSON.parse(fs.readFileSync(this.#configFilePath, 'utf-8'));
+	            if (this.#validateConfig(loadedConfig)) {
+	                this.#config = loadedConfig;
 	                this.log('Configuration loaded successfully.');
 	            }
 	            else {
 	                console.error('Invalid configuration file. Loading defaults.');
-	                this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
+	                this.#config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
 	            }
 	        }
 	        else {
-	            this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
+	            this.#config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
 	        }
 	    }
 	    /**
@@ -221,26 +223,26 @@ function requireConfig () {
 	     */
 	    saveConfigP() {
 	        const config = {
-	            paths: this.paths,
-	            excludePaths: this.excludePaths,
-	            fileTypes: this.fileTypes,
-	            fileRegexs: this.fileRegexs,
-	            useFileTypes: this.useFileTypes,
-	            useFileRegexs: this.useFileRegexs,
-	            useCeaserCipher: this.useCeaserCipher,
-	            useAesKey: this.useAesKey,
-	            forkDelay: this.forkDelay,
-	            forkExecutionDelay: this.forkExecutionDelay,
-	            threads: this.threads,
-	            debug: this.debug,
-	            whiteSpaceOffset: this.whiteSpaceOffset,
-	            localPathReferences: this.localPathReferences,
-	            selfTamperProof: this.selfTamperProof,
-	            selfNpmTamperProof: this.selfNpmTamperProof,
+	            paths: this.#paths,
+	            excludePaths: this.#excludePaths,
+	            fileTypes: this.#fileTypes,
+	            fileRegexs: this.#fileRegexs,
+	            useFileTypes: this.#useFileTypes,
+	            useFileRegexs: this.#useFileRegexs,
+	            useCeaserCipher: this.#useCeaserCipher,
+	            useAesKey: this.#useAesKey,
+	            forkDelay: this.#forkDelay,
+	            forkExecutionDelay: this.#forkExecutionDelay,
+	            threads: this.#threads,
+	            debug: this.#debug,
+	            whiteSpaceOffset: this.#whiteSpaceOffset,
+	            localPathReferences: this.#localPathReferences,
+	            selfTamperProof: this.#selfTamperProof,
+	            selfNpmTamperProof: this.#selfNpmTamperProof,
 	        };
-	        if (this.validateConfig(config)) {
-	            this.config = config;
-	            this.saveConfig();
+	        if (this.#validateConfig(config)) {
+	            this.#config = config;
+	            this.#saveConfig();
 	        }
 	        else {
 	            console.error('Invalid configuration. Save aborted.');
@@ -251,9 +253,11 @@ function requireConfig () {
 	     * @param path - The path to add.
 	     */
 	    addPath(path) {
-	        if (!this.config.paths.includes(path)) {
-	            this.config.paths.push(path);
-	            this.saveConfig();
+	        if (this.#configLock)
+	            return;
+	        if (!this.#config.paths.includes(path)) {
+	            this.#config.paths.push(path);
+	            this.#saveConfig();
 	            this.log(`Path ${path} added to configuration.`);
 	        }
 	    }
@@ -262,10 +266,12 @@ function requireConfig () {
 	     * @param path - The path to remove.
 	     */
 	    removePath(path) {
-	        const index = this.config.paths.indexOf(path);
+	        if (this.#configLock)
+	            return;
+	        const index = this.#config.paths.indexOf(path);
 	        if (index > -1) {
-	            this.config.paths.splice(index, 1);
-	            this.saveConfig();
+	            this.#config.paths.splice(index, 1);
+	            this.#saveConfig();
 	            this.log(`Path ${path} removed from configuration.`);
 	        }
 	    }
@@ -274,9 +280,11 @@ function requireConfig () {
 	     * @param path - The exclude path to add.
 	     */
 	    addExcludePath(path) {
-	        if (!this.config.excludePaths.includes(path)) {
-	            this.config.excludePaths.push(path);
-	            this.saveConfig();
+	        if (this.#configLock)
+	            return;
+	        if (!this.#config.excludePaths.includes(path)) {
+	            this.#config.excludePaths.push(path);
+	            this.#saveConfig();
 	            this.log(`Exclude path ${path} added to configuration.`);
 	        }
 	    }
@@ -285,10 +293,12 @@ function requireConfig () {
 	     * @param path - The exclude path to remove.
 	     */
 	    removeExcludePath(path) {
-	        const index = this.config.excludePaths.indexOf(path);
+	        if (this.#configLock)
+	            return;
+	        const index = this.#config.excludePaths.indexOf(path);
 	        if (index > -1) {
-	            this.config.excludePaths.splice(index, 1);
-	            this.saveConfig();
+	            this.#config.excludePaths.splice(index, 1);
+	            this.#saveConfig();
 	            this.log(`Exclude path ${path} removed from configuration.`);
 	        }
 	    }
@@ -297,9 +307,11 @@ function requireConfig () {
 	     * @param fileType - The file type to add.
 	     */
 	    addFileType(fileType) {
-	        if (!this.config.fileTypes.includes(fileType)) {
-	            this.config.fileTypes.push(fileType);
-	            this.saveConfig();
+	        if (this.#configLock)
+	            return;
+	        if (!this.#config.fileTypes.includes(fileType)) {
+	            this.#config.fileTypes.push(fileType);
+	            this.#saveConfig();
 	            this.log(`File type ${fileType} added to configuration.`);
 	        }
 	    }
@@ -308,10 +320,12 @@ function requireConfig () {
 	     * @param fileType - The file type to remove.
 	     */
 	    removeFileType(fileType) {
-	        const index = this.config.fileTypes.indexOf(fileType);
+	        if (this.#configLock)
+	            return;
+	        const index = this.#config.fileTypes.indexOf(fileType);
 	        if (index > -1) {
-	            this.config.fileTypes.splice(index, 1);
-	            this.saveConfig();
+	            this.#config.fileTypes.splice(index, 1);
+	            this.#saveConfig();
 	            this.log(`File type ${fileType} removed from configuration.`);
 	        }
 	    }
@@ -320,9 +334,11 @@ function requireConfig () {
 	     * @param regex - The file regex to add.
 	     */
 	    addFileRegex(regex) {
-	        if (!this.config.fileRegexs.includes(regex)) {
-	            this.config.fileRegexs.push(regex);
-	            this.saveConfig();
+	        if (this.#configLock)
+	            return;
+	        if (!this.#config.fileRegexs.includes(regex)) {
+	            this.#config.fileRegexs.push(regex);
+	            this.#saveConfig();
 	            this.log(`File regex ${regex} added to configuration.`);
 	        }
 	    }
@@ -331,12 +347,24 @@ function requireConfig () {
 	     * @param regex - The file regex to remove.
 	     */
 	    removeFileRegex(regex) {
-	        const index = this.config.fileRegexs.indexOf(regex);
+	        if (this.#configLock)
+	            return;
+	        const index = this.#config.fileRegexs.indexOf(regex);
 	        if (index > -1) {
-	            this.config.fileRegexs.splice(index, 1);
-	            this.saveConfig();
+	            this.#config.fileRegexs.splice(index, 1);
+	            this.#saveConfig();
 	            this.log(`File regex ${regex} removed from configuration.`);
 	        }
+	    }
+	    getConfig() {
+	        //Memory safe proper export of configuration incase they want to runtime lock the config file!
+	        //Exports a duplicate! in runtime config lock mode!
+	        if (this.#configLock) {
+	            //Due to the nature of JSON parsing and stringifying we can make a deep copy of the object to return!
+	            const config = JSON.parse(JSON.stringify(this.#config));
+	            return config;
+	        }
+	        return this.#config;
 	    }
 	}
 	config.Config = Config;
@@ -469,13 +497,6 @@ function requireWorker () {
 	    return result;
 	};
 	Object.defineProperty(worker, "__esModule", { value: true });
-	/************************************************************************************************************************
-	 * Author: Johnathan Edward Brown                                                                                       *
-	 * Purpose: Worker class for the PheonixBox Class Object for the CLI Pheonix application.                               *
-	 * Last Modified: 2024-10-15                                                                                            *
-	 * License: X11 License                                                                                                 *
-	 * Version: 1.0.2                                                                                                       *
-	 ************************************************************************************************************************/
 	const fs = __importStar(require$$0);
 	const crypto = __importStar(require$$1);
 	const path = __importStar(require$$2);
@@ -511,21 +532,21 @@ function requireWorker () {
 	 * @method terminate - Terminates the worker process.
 	 */
 	class JohnsWorker {
-	    config;
-	    fileHashes;
-	    fileContents;
-	    cipherKey;
-	    shuffledKey;
-	    aesKey;
-	    loaded;
+	    #config;
+	    #fileHashes;
+	    #fileContents;
+	    #cipherKey;
+	    #shuffledKey;
+	    #aesKey;
+	    #loaded;
 	    constructor(config, fileList, chunks, cipherKey, shuffledKey, aesKey, loaded, fileHashes, fileContents) {
-	        this.config = config;
-	        this.loaded = loaded;
-	        this.fileHashes = fileHashes || {};
-	        this.fileContents = fileContents || {};
-	        this.cipherKey = cipherKey;
-	        this.shuffledKey = shuffledKey;
-	        this.aesKey = aesKey;
+	        this.#config = config.getConfig();
+	        this.#loaded = loaded;
+	        this.#fileHashes = fileHashes || {};
+	        this.#fileContents = fileContents || {};
+	        this.#cipherKey = cipherKey;
+	        this.#shuffledKey = shuffledKey;
+	        this.#aesKey = aesKey;
 	        this.processFiles(fileList, chunks);
 	    }
 	    /**
@@ -534,7 +555,7 @@ function requireWorker () {
 	     * @param {...any[]} args - The messages or objects to log.
 	     */
 	    log(...args) {
-	        if (this.config.debug) {
+	        if (this.#config.debug) {
 	            console.log(...args);
 	        }
 	    }
@@ -549,18 +570,18 @@ function requireWorker () {
 	     * - If AES encryption is enabled and an AES key is provided, the method further encrypts the result using AES-256-CBC.
 	     * - Logs the encryption process at various stages.
 	     */
-	    encrypt(text) {
+	    #encrypt(text) {
 	        this.log('Encrypting text...');
 	        const caesarEncrypted = text.split('').map(char => {
-	            const index = this.cipherKey.indexOf(char);
+	            const index = this.#cipherKey.indexOf(char);
 	            if (index === -1) {
 	                return char;
 	            }
-	            return this.shuffledKey[index];
+	            return this.#shuffledKey[index];
 	        }).join('');
-	        if (this.config.useAesKey && this.aesKey) {
+	        if (this.#config.useAesKey && this.#aesKey) {
 	            const iv = crypto.randomBytes(16); // Initialization vector
-	            const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(this.aesKey), iv);
+	            const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(this.#aesKey), iv);
 	            let encrypted = cipher.update(caesarEncrypted, 'utf8', 'hex');
 	            encrypted += cipher.final('hex');
 	            const encryptedWithIv = iv.toString('hex') + ':' + encrypted;
@@ -583,10 +604,10 @@ function requireWorker () {
 	     * 3. Using a Caesar cipher to further decrypt the text.
 	     * 4. Logging the decrypted text after applying the Caesar cipher.
 	     */
-	    decrypt(text) {
+	    #decrypt(text) {
 	        this.log('Decrypting text...');
 	        let decrypted = text;
-	        if (this.config.useAesKey && this.aesKey) {
+	        if (this.#config.useAesKey && this.#aesKey) {
 	            const textParts = text.split(':');
 	            if (textParts.length < 2) {
 	                throw new Error('Invalid encrypted text format');
@@ -596,17 +617,17 @@ function requireWorker () {
 	                throw new Error('Invalid initialization vector length');
 	            }
 	            const encryptedText = textParts.join(':');
-	            const key = this.config.useCeaserCipher ? Buffer.from(this.aesKey) : this.aesKey;
+	            const key = this.#config.useCeaserCipher ? Buffer.from(this.#aesKey) : this.#aesKey;
 	            const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
 	            decrypted = decipher.update(encryptedText, 'hex', 'utf8');
 	            decrypted += decipher.final('utf8');
 	        }
 	        const caesarDecrypted = decrypted.split('').map(char => {
-	            const index = this.shuffledKey.indexOf(char);
+	            const index = this.#shuffledKey.indexOf(char);
 	            if (index === -1) {
 	                return char;
 	            }
-	            return this.cipherKey[index];
+	            return this.#cipherKey[index];
 	        }).join('');
 	        this.log('Decrypted text with Caesar cipher:', caesarDecrypted);
 	        return caesarDecrypted;
@@ -624,11 +645,11 @@ function requireWorker () {
 	            try {
 	                this.log('Processing files...');
 	                fileList.forEach(filePath => {
-	                    this.processFile(filePath, chunks);
+	                    this.#processFile(filePath);
 	                });
 	                resolve({
-	                    fileHashes: this.fileHashes,
-	                    fileContents: this.fileContents
+	                    fileHashes: this.#fileHashes,
+	                    fileContents: this.#fileContents
 	                });
 	            }
 	            catch (error) {
@@ -642,19 +663,18 @@ function requireWorker () {
 	     * with the stored content. The file hash and content can be encrypted/decrypted based on the configuration.
 	     *
 	     * @param filePath - The path of the file to process.
-	     * @param chunks - Additional data or chunks related to the file processing (not used in the current implementation).
 	     */
-	    processFile(filePath, chunks) {
+	    #processFile(filePath) {
 	        this.log('Processing file:', filePath);
-	        if (this.shouldProcessFile(filePath)) {
+	        if (this.#shouldProcessFile(filePath)) {
 	            const fileContent = fs.readFileSync(filePath, 'utf-8');
 	            const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
-	            if (this.fileHashes[filePath] !== undefined && this.fileContents[filePath] !== undefined) {
-	                const storedHash = this.config.useCeaserCipher ? this.decrypt(this.fileHashes[filePath]) : this.fileHashes[filePath];
-	                const storedContent = this.config.useCeaserCipher ? this.decrypt(this.fileContents[filePath]) : this.fileContents[filePath];
+	            if (this.#fileHashes[filePath] !== undefined && this.#fileContents[filePath] !== undefined) {
+	                const storedHash = this.#config.useCeaserCipher ? this.#decrypt(this.#fileHashes[filePath]) : this.#fileHashes[filePath];
+	                const storedContent = this.#config.useCeaserCipher ? this.#decrypt(this.#fileContents[filePath]) : this.#fileContents[filePath];
 	                if (!storedHash) {
-	                    this.fileHashes[filePath] = this.config.useCeaserCipher ? this.encrypt(fileHash) : fileHash;
-	                    this.fileContents[filePath] = this.config.useCeaserCipher ? this.encrypt(fileContent) : fileContent;
+	                    this.#fileHashes[filePath] = this.#config.useCeaserCipher ? this.#encrypt(fileHash) : fileHash;
+	                    this.#fileContents[filePath] = this.#config.useCeaserCipher ? this.#encrypt(fileContent) : fileContent;
 	                }
 	                else if (storedHash !== fileHash) {
 	                    this.log(`File hash mismatch for ${filePath}. Replacing content with stored content. , ${storedContent} \n, ${fileContent}`);
@@ -662,8 +682,8 @@ function requireWorker () {
 	                }
 	            }
 	            else {
-	                this.fileHashes[filePath] = this.config.useCeaserCipher ? this.encrypt(fileHash) : fileHash;
-	                this.fileContents[filePath] = this.config.useCeaserCipher ? this.encrypt(fileContent) : fileContent;
+	                this.#fileHashes[filePath] = this.#config.useCeaserCipher ? this.#encrypt(fileHash) : fileHash;
+	                this.#fileContents[filePath] = this.#config.useCeaserCipher ? this.#encrypt(fileContent) : fileContent;
 	            }
 	        }
 	    }
@@ -679,21 +699,21 @@ function requireWorker () {
 	     * - If `useFileTypes` is enabled, checks if the file extension is included in the `fileTypes` configuration.
 	     * - If `useFileRegexs` is enabled, checks if the file name matches any of the regular expressions in the `fileRegexs` configuration.
 	     */
-	    shouldProcessFile(filePath) {
+	    #shouldProcessFile(filePath) {
 	        this.log('Checking if file should be processed:', filePath);
-	        if (this.config.excludePaths?.some(excludePath => filePath.startsWith(excludePath))) {
+	        if (this.#config.excludePaths?.some((excludePath) => filePath.startsWith(excludePath))) {
 	            this.log(`File ${filePath} is excluded from processing.`);
 	            return false;
 	        }
-	        if (this.config.useFileTypes) {
+	        if (this.#config.useFileTypes) {
 	            const fileExtension = path.extname(filePath);
-	            if (!this.config.fileTypes?.includes(fileExtension)) {
+	            if (!this.#config.fileTypes?.includes(fileExtension)) {
 	                return false;
 	            }
 	        }
-	        if (this.config.useFileRegexs) {
+	        if (this.#config.useFileRegexs) {
 	            const fileName = path.basename(filePath);
-	            if (!this.config.fileRegexs?.some(regex => new RegExp(regex).test(fileName))) {
+	            if (!this.#config.fileRegexs?.some((regex) => new RegExp(regex).test(fileName))) {
 	                return false;
 	            }
 	        }
@@ -753,7 +773,7 @@ function requireMain () {
 		/************************************************************************************************************************
 		 * Author: Johnathan Edward Brown                                                                                       *
 		 * Purpose: Main entry point for the PheonixBox Class Object for the CLI Pheonix application.                           *
-		 * Last Modified: 2024-10-14                                                                                            *
+		 * Last Modified: 2024-10-18                                                                                            *
 		 * License: X11 License                                                                                                 *
 		 * Version: 1.0.2                                                                                                       *
 		 ************************************************************************************************************************/
@@ -782,7 +802,7 @@ function requireMain () {
 		                const result = await worker.processFiles(chunk, {});
 		                if (process.send)
 		                    process.send({ type: 'result', fileHashes: result.fileHashes, fileContents: result.fileContents });
-		                await new Promise(resolve => setTimeout(resolve, config.forkExecutionDelay || 1000)); // Add a configurable delay between executions
+		                await new Promise(resolve => setTimeout(resolve, config.getConfig().forkExecutionDelay || 1000)); // Add a configurable delay between executions
 		            }
 		        }
 		    });
@@ -793,14 +813,16 @@ function requireMain () {
 		 * It supports runtime protection, state saving/loading, and multi-threaded processing.
 		 */
 		class JohnsPheonixBox {
-		    config;
-		    fileHashes = {};
-		    fileContents = {};
-		    cipherKey = '';
-		    shuffledKey = '';
-		    safeAsciiCharacters = [];
-		    aesKey = null;
-		    loaded;
+		    #config;
+		    #cfg;
+		    #fileHashes = {};
+		    #fileContents = {};
+		    #cipherKey = '';
+		    #shuffledKey = '';
+		    #safeAsciiCharacters = [];
+		    #aesKey = null;
+		    #forkInterval = null;
+		    #loaded;
 		    /**
 		     * Initializes a new instance of the `JohnsPheonixBox` class.
 		     *
@@ -809,47 +831,50 @@ function requireMain () {
 		     * @param {string} [assetLocation=''] - The location of the SEA asset.
 		     */
 		    constructor(config, useSeaAsset = false, assetLocation = '') {
-		        this.loaded = false;
+		        this.#loaded = false;
 		        if (config) {
-		            this.config = config;
-		            if (!this.config.selfNpmTamperProof && !this.config.selfTamperProof)
-		                this.config.saveConfigP(); //Prevent Binary Tamper proofing from saving there configurations!
-		            this.loadState();
+		            this.#cfg = config;
+		            this.#config = config.getConfig();
+		            if (!this.#config.selfNpmTamperProof && !this.#config.selfTamperProof)
+		                this.#cfg.saveConfigP(); //Prevent Binary Tamper proofing from saving there configurations!
+		            this.#loadState();
 		        }
 		        else if (useSeaAsset && assetLocation) {
-		            this.config = this.loadConfigFromSeaAsset(assetLocation);
+		            this.#cfg = this.#loadConfigFromSeaAsset(assetLocation);
+		            this.#config = this.#cfg.getConfig();
 		        }
 		        else {
-		            this.config = new config_1.Config();
-		            if (!this.config.selfNpmTamperProof && !this.config.selfTamperProof)
-		                this.config.saveConfigP(); //Prevent Binary Tamper proofing from saving there configurations!
-		            this.loadState();
+		            this.#cfg = new config_1.Config();
+		            this.#config = this.#cfg.getConfig();
+		            if (!this.#config.selfNpmTamperProof && !this.#config.selfTamperProof)
+		                this.#cfg.saveConfigP(); //Prevent Binary Tamper proofing from saving there configurations!
+		            this.#loadState();
 		        }
 		        this.log('Initializing JohnsPheonixBox...');
-		        console.log('This loaded:', this.loaded);
-		        if (this.loaded === false) {
-		            this.safeAsciiCharacters = (0, char_1.generateSafeUtf8Characters)(this.config.whiteSpaceOffset);
-		            this.cipherKey = this.generateCipherKey();
-		            this.shuffledKey = this.cipherKey;
-		            if (this.config.useAesKey) {
-		                this.aesKey = crypto.randomBytes(32); // Use 256-bit key size
+		        console.log('This loaded:', this.#loaded);
+		        if (this.#loaded === false) {
+		            this.#safeAsciiCharacters = (0, char_1.generateSafeUtf8Characters)(this.#config.whiteSpaceOffset);
+		            this.#cipherKey = this.#generateCipherKey();
+		            this.#shuffledKey = this.#cipherKey;
+		            if (this.#config.useAesKey) {
+		                this.#aesKey = crypto.randomBytes(32); // Use 256-bit key size
 		            }
 		        }
 		        process.on('exit', (code) => {
 		            if (code !== 369) {
 		                if (exports.clusterLock.clusterLock === false)
-		                    this.saveState();
+		                    this.#saveState();
 		            }
 		        });
 		        process.on('SIGINT', () => {
 		            if (exports.clusterLock.clusterLock === false)
-		                this.saveState();
+		                this.#saveState();
 		            process.exit(369);
 		        });
-		        this.log('JohnsPheonixBox initialized with config:', this.config);
+		        this.log('JohnsPheonixBox initialized with config:', this.#config);
 		    }
 		    log(...args) {
-		        if (this.config.debug) {
+		        if (this.#config.debug) {
 		            console.log(...args);
 		        }
 		    }
@@ -870,42 +895,42 @@ function requireMain () {
 		     */
 		    initRuntimeProtect(npm, binary, localReferences, dirname) {
 		        if (npm) {
-		            if (!this.config.selfNpmTamperProof) {
-		                this.config.selfNpmTamperProof = true;
+		            if (!this.#config.selfNpmTamperProof) {
+		                this.#config.selfNpmTamperProof = true;
 		            }
 		            if (localReferences) {
-		                this.config.addPath(__filename);
-		                this.config.addPath('node_modules');
+		                this.#cfg.addPath(__filename);
+		                this.#cfg.addPath('node_modules');
 		            }
 		            else {
 		                if (dirname) {
-		                    this.config.addPath(path.join(__dirname, __filename));
-		                    this.config.addPath(path.join(__dirname, 'node_modules'));
+		                    this.#cfg.addPath(path.join(__dirname, __filename));
+		                    this.#cfg.addPath(path.join(__dirname, 'node_modules'));
 		                }
 		                else {
-		                    this.config.addPath(path.join(process.cwd(), __filename));
-		                    this.config.addPath(path.join(process.cwd(), 'node_modules'));
+		                    this.#cfg.addPath(path.join(process.cwd(), __filename));
+		                    this.#cfg.addPath(path.join(process.cwd(), 'node_modules'));
 		                }
 		            }
 		        }
 		        if (binary) {
-		            if (!this.config.selfTamperProof) {
-		                this.config.selfTamperProof = true;
+		            if (!this.#config.selfTamperProof) {
+		                this.#config.selfTamperProof = true;
 		            }
 		            if (localReferences) {
-		                this.config.addPath(__filename);
+		                this.#cfg.addPath(__filename);
 		            }
 		            else {
 		                if (dirname) {
-		                    this.config.addPath(path.join(__dirname, __filename));
+		                    this.#cfg.addPath(path.join(__dirname, __filename));
 		                }
 		                else {
-		                    this.config.addPath(path.join(process.cwd(), __filename));
+		                    this.#cfg.addPath(path.join(process.cwd(), __filename));
 		                }
 		            }
 		        }
 		        if (localReferences)
-		            this.config.localPathReferences = true;
+		            this.#config.localPathReferences = true;
 		    }
 		    /**
 		     * Loads the configuration from a SEA asset.
@@ -913,7 +938,7 @@ function requireMain () {
 		     * @param {string} assetLocation - The location of the SEA asset.
 		     * @returns {Config} The loaded configuration object.
 		     */
-		    loadConfigFromSeaAsset(assetLocation) {
+		    #loadConfigFromSeaAsset(assetLocation) {
 		        console.log('Loading config from sea asset:', assetLocation);
 		        const arrayBuffer = sea.getAsset(assetLocation);
 		        const configString = Buffer.from(arrayBuffer.toString()).toString('utf8');
@@ -923,35 +948,35 @@ function requireMain () {
 		    /**
 		     * Loads the state from a file.
 		     */
-		    loadState() {
+		    #loadState() {
 		        console.log('Loading state from file:', STATE_FILE_PATH);
 		        if (fs.existsSync(STATE_FILE_PATH)) {
 		            const state = JSON.parse(fs.readFileSync(STATE_FILE_PATH, 'utf-8'));
-		            this.cipherKey = state.cipherKey;
-		            this.shuffledKey = state.shuffledKey;
-		            this.fileHashes = state.fileHashes;
-		            this.fileContents = state.fileContents;
-		            if (this.config.useAesKey && state.aesKey) {
-		                this.aesKey = Buffer.from(state.aesKey, 'hex');
+		            this.#cipherKey = state.cipherKey;
+		            this.#shuffledKey = state.shuffledKey;
+		            this.#fileHashes = state.fileHashes;
+		            this.#fileContents = state.fileContents;
+		            if (this.#config.useAesKey && state.aesKey) {
+		                this.#aesKey = Buffer.from(state.aesKey, 'hex');
 		            }
 		            fs.unlinkSync(STATE_FILE_PATH); // Delete the state file after loading
 		            this.log('Loaded state:', state);
-		            this.loaded = true;
+		            this.#loaded = true;
 		        }
 		    }
 		    /**
 		     * Saves the current state to a file.
 		     */
-		    saveState() {
+		    #saveState() {
 		        this.log('Saving state to file:', STATE_FILE_PATH);
 		        const state = {
-		            cipherKey: this.cipherKey,
-		            shuffledKey: this.shuffledKey,
-		            fileHashes: this.fileHashes,
-		            fileContents: this.fileContents
+		            cipherKey: this.#cipherKey,
+		            shuffledKey: this.#shuffledKey,
+		            fileHashes: this.#fileHashes,
+		            fileContents: this.#fileContents
 		        };
-		        if (this.config.useAesKey && this.aesKey) {
-		            state.aesKey = this.aesKey.toString('hex');
+		        if (this.#config.useAesKey && this.#aesKey) {
+		            state.aesKey = this.#aesKey.toString('hex');
 		        }
 		        fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(state), 'utf-8');
 		        this.log('Saved state:', state);
@@ -959,39 +984,47 @@ function requireMain () {
 		    /**
 		     * Starts the process, managing worker threads and distributing tasks.
 		     */
-		    startProcess() {
+		    #startProcess() {
 		        if (cluster_1.default.isPrimary) {
 		            let numCPUs = os.cpus().length;
-		            if (numCPUs > this.config.threads)
-		                numCPUs = this.config.threads; // If configurations for threads is lower than the numCpu threads use that!
-		            const fileList = this.getFileList();
+		            if (numCPUs > this.#config.threads)
+		                numCPUs = this.#config.threads; // If configurations for threads is lower than the numCpu threads use that!
+		            const fileList = this.#getFileList();
 		            const chunkSize = Math.ceil(fileList.length / numCPUs);
 		            this.log(`Master ${process.pid} is running, using ${numCPUs} threads with chunk size ${chunkSize}`);
-		            // Fork workers.
+		            // Fork workers using an interval.
 		            let i = 0;
-		            const forkWorker = () => {
-		                if (i < numCPUs) {
+		            let activeWorkers = 0;
+		            const maxWorkers = numCPUs;
+		            const forkDelay = this.#config.forkDelay || 100;
+		            this.#forkInterval = setInterval(() => {
+		                if (i < numCPUs && activeWorkers < maxWorkers) {
 		                    const chunk = fileList.slice(i * chunkSize, (i + 1) * chunkSize);
 		                    const worker = cluster_1.default.fork();
+		                    activeWorkers++;
 		                    worker.on('message', (message) => {
 		                        if (message.type === 'result') {
 		                            this.log(`Master received result from worker ${worker.process.pid}`);
-		                            Object.assign(this.fileHashes, message.fileHashes);
-		                            Object.assign(this.fileContents, message.fileContents);
+		                            Object.assign(this.#fileHashes, message.fileHashes);
+		                            Object.assign(this.#fileContents, message.fileContents);
 		                        }
 		                    });
-		                    worker.send({ type: 'start', chunk, config: this.config, cipherKey: this.cipherKey, shuffledKey: this.shuffledKey, aesKey: this.aesKey, loaded: this.loaded, fileHashes: this.fileHashes, fileContents: this.fileContents });
+		                    worker.on('exit', (code, signal) => {
+		                        this.log(`Worker ${worker.process.pid} exited with code ${code} and signal ${signal}`);
+		                        activeWorkers--;
+		                        if (activeWorkers === 0 && i >= numCPUs) {
+		                            if (this.#forkInterval)
+		                                clearInterval(this.#forkInterval);
+		                        }
+		                    });
+		                    worker.send({ type: 'start', chunk, config: this.#config, cipherKey: this.#cipherKey, shuffledKey: this.#shuffledKey, aesKey: this.#aesKey, loaded: this.#loaded, fileHashes: this.#fileHashes, fileContents: this.#fileContents });
 		                    i++;
-		                    setTimeout(forkWorker, this.config.forkDelay || 100); // Add a configurable delay between forks
 		                }
-		            };
-		            while (i < numCPUs) {
-		                forkWorker();
-		            }
-		            cluster_1.default.on('exit', (worker, code, signal) => {
-		                this.log(`Worker ${worker.process.pid} died`);
-		                i = i - 1;
-		            });
+		                else if (i >= numCPUs && activeWorkers === 0) {
+		                    if (this.#forkInterval)
+		                        clearInterval(this.#forkInterval);
+		                }
+		            }, forkDelay);
 		        }
 		    }
 		    /**
@@ -999,12 +1032,12 @@ function requireMain () {
 		     *
 		     * @returns {string[]} The list of file paths.
 		     */
-		    getFileList() {
+		    #getFileList() {
 		        this.log('Generating file list...');
 		        const fileList = [];
-		        const excludePaths = this.config.excludePaths || [];
-		        this.config.paths.forEach((filePath) => {
-		            if (this.config.localPathReferences) {
+		        const excludePaths = this.#config.excludePaths || [];
+		        this.#config.paths.forEach((filePath) => {
+		            if (this.#config.localPathReferences) {
 		                filePath = path.join(__dirname, filePath);
 		            }
 		            if (fs.existsSync(filePath)) {
@@ -1024,7 +1057,7 @@ function requireMain () {
 		                }
 		            }
 		        });
-		        if (this.config.selfTamperProof) {
+		        if (this.#config.selfTamperProof) {
 		            if (fs.existsSync(path.join(__dirname, __filename))) {
 		                fileList.push(path.join(__dirname, __filename));
 		            }
@@ -1034,7 +1067,7 @@ function requireMain () {
 		                }
 		            }
 		        }
-		        if (this.config.selfNpmTamperProof) {
+		        if (this.#config.selfNpmTamperProof) {
 		            fileList.push(__dirname);
 		            const npmModulesPath = path.join(__dirname, 'node_modules');
 		            if (fs.existsSync(npmModulesPath)) {
@@ -1049,10 +1082,10 @@ function requireMain () {
 		     *
 		     * @returns {string} The generated cipher key.
 		     */
-		    generateCipherKey() {
+		    #generateCipherKey() {
 		        this.log('Generating cipher key...');
-		        const alphabet = this.safeAsciiCharacters;
-		        const array = this.shuffleKeys(alphabet);
+		        const alphabet = this.#safeAsciiCharacters;
+		        const array = this.#shuffleKeys(alphabet);
 		        for (let i = array.length - 1; i > 0; i--) {
 		            const j = crypto.randomInt(0, i + 1);
 		            [array[i], array[j]] = [array[j], array[i]];
@@ -1067,7 +1100,7 @@ function requireMain () {
 		     * @param {string[]} array - The array of strings to shuffle.
 		     * @returns {string[]} The shuffled array.
 		     */
-		    shuffleKeys(array) {
+		    #shuffleKeys(array) {
 		        this.log('Shuffling key...');
 		        for (let i = array.length - 1; i > 0; i--) {
 		            const j = crypto.randomInt(0, i + 1);
@@ -1081,7 +1114,7 @@ function requireMain () {
 		     * @param {string} key - The key string to shuffle.
 		     * @returns {string} The shuffled key.
 		     */
-		    shuffleKey(key) {
+		    #shuffleKey(key) {
 		        this.log('Shuffling key...');
 		        const array = key.split('');
 		        for (let i = array.length - 1; i > 0; i--) {

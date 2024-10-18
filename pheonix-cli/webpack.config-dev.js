@@ -10,7 +10,7 @@ module.exports = {
   mode: 'development',
   entry: [
     '/node_modules/node-pkg-plugin/tamperScripts/tamper.ts',
-    '/node_modules/node-pkg-plugin/tamperScripts/tamperBinary.ts',
+    //'/node_modules/node-pkg-plugin/tamperScripts/tamperBinary.ts',
     "/src/cli.ts"
   ],
   module: {

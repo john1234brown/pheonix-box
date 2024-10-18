@@ -27,7 +27,7 @@ exports.Config = void 0;
 /************************************************************************************************************************
  * Author: Johnathan Edward Brown                                                                                       *
  * Purpose: Configuration class for the CLI Pheonix application.                                                        *
- * Last Modified: 2024-10-14                                                                                            *
+ * Last Modified: 2024-10-18                                                                                            *
  * License: X11 License                                                                                                 *
  * Version: 1.0.2                                                                                                       *
  ************************************************************************************************************************/
@@ -39,33 +39,34 @@ class Config {
     /**
      * Path to the configuration file.
      */
-    configFilePath = 'configurable.json';
+    #configFilePath = 'configurable.json';
     /**
      * Configuration object containing various settings.
      */
-    config;
-    paths;
-    excludePaths;
-    fileTypes;
-    fileRegexs;
-    useFileTypes;
-    useFileRegexs;
-    useCeaserCipher;
-    useAesKey;
-    forkDelay;
-    forkExecutionDelay;
-    threads;
-    whiteSpaceOffset;
-    debug;
-    localPathReferences;
-    selfTamperProof;
-    selfNpmTamperProof;
+    #config;
+    #paths;
+    #excludePaths;
+    #fileTypes;
+    #fileRegexs;
+    #useFileTypes;
+    #useFileRegexs;
+    #useCeaserCipher;
+    #useAesKey;
+    #forkDelay;
+    #forkExecutionDelay;
+    #threads;
+    #whiteSpaceOffset;
+    #debug;
+    #localPathReferences;
+    #selfTamperProof;
+    #selfNpmTamperProof;
+    #configLock = false;
     /**
      * Creates an instance of Config.
      * @param configObject - Optional configuration object to initialize with.
      */
     constructor(configObject) {
-        this.config = {
+        this.#config = {
             paths: [],
             excludePaths: [],
             fileTypes: [],
@@ -83,48 +84,49 @@ class Config {
             selfTamperProof: false,
             selfNpmTamperProof: false,
         };
-        if (configObject && this.validateConfig(configObject)) {
-            this.config = configObject;
+        if (configObject && this.#validateConfig(configObject)) {
+            this.#configLock = true;
+            this.#config = configObject;
         }
         else {
-            this.loadConfig();
+            this.#loadConfig();
         }
-        this.paths = this.config.paths;
-        this.excludePaths = this.config.excludePaths;
-        this.fileTypes = this.config.fileTypes;
-        this.fileRegexs = this.config.fileRegexs;
-        this.useFileRegexs = this.config.useFileRegexs;
-        this.useFileTypes = this.config.useFileTypes;
-        this.useCeaserCipher = this.config.useCeaserCipher;
-        this.useAesKey = this.config.useAesKey;
-        this.forkDelay = this.config.forkDelay;
-        this.forkExecutionDelay = this.config.forkExecutionDelay;
-        this.threads = this.config.threads;
-        this.debug = this.config.debug;
-        this.whiteSpaceOffset = this.config.whiteSpaceOffset;
-        this.localPathReferences = this.config.localPathReferences;
-        this.selfTamperProof = this.config.selfTamperProof;
-        this.selfNpmTamperProof = this.config.selfNpmTamperProof;
+        this.#paths = this.#config.paths;
+        this.#excludePaths = this.#config.excludePaths;
+        this.#fileTypes = this.#config.fileTypes;
+        this.#fileRegexs = this.#config.fileRegexs;
+        this.#useFileRegexs = this.#config.useFileRegexs;
+        this.#useFileTypes = this.#config.useFileTypes;
+        this.#useCeaserCipher = this.#config.useCeaserCipher;
+        this.#useAesKey = this.#config.useAesKey;
+        this.#forkDelay = this.#config.forkDelay;
+        this.#forkExecutionDelay = this.#config.forkExecutionDelay;
+        this.#threads = this.#config.threads;
+        this.#debug = this.#config.debug;
+        this.#whiteSpaceOffset = this.#config.whiteSpaceOffset;
+        this.#localPathReferences = this.#config.localPathReferences;
+        this.#selfTamperProof = this.#config.selfTamperProof;
+        this.#selfNpmTamperProof = this.#config.selfNpmTamperProof;
     }
     /**
      * Logs a message if debug mode is enabled.
      * @param message - The message to log.
      */
     log(message) {
-        if (this.debug) {
+        if (this.#debug) {
             console.log(message);
         }
     }
     /**
      * Saves the current configuration to the configuration file.
      */
-    saveConfig() {
-        if (this.config.selfTamperProof || this.config.selfNpmTamperProof) {
+    #saveConfig() {
+        if (this.#config.selfTamperProof || this.#config.selfNpmTamperProof) {
             console.error('Configuration is tamper-proof. Save aborted.');
             return;
         }
-        if (this.validateConfig(this.config)) {
-            fs.writeFileSync(this.configFilePath, JSON.stringify(this.config, null, 2));
+        if (this.#validateConfig(this.#config)) {
+            fs.writeFileSync(this.#configFilePath, JSON.stringify(this.#config, null, 2));
             this.log('Configuration saved successfully.');
         }
         else {
@@ -136,7 +138,7 @@ class Config {
      * @param config - The configuration object to validate.
      * @returns True if the configuration is valid, false otherwise.
      */
-    validateConfig(config) {
+    #validateConfig(config) {
         if (!Array.isArray(config.paths))
             return false;
         if (!Array.isArray(config.excludePaths))
@@ -174,24 +176,24 @@ class Config {
     /**
      * Loads the configuration from the configuration file.
      */
-    loadConfig() {
-        if (this.config.selfTamperProof || this.config.selfNpmTamperProof) {
+    #loadConfig() {
+        if (this.#config.selfTamperProof || this.#config.selfNpmTamperProof) {
             console.error('Configuration is tamper-proof. Load aborted.');
             return;
         }
-        if (fs.existsSync(this.configFilePath)) {
-            const loadedConfig = JSON.parse(fs.readFileSync(this.configFilePath, 'utf-8'));
-            if (this.validateConfig(loadedConfig)) {
-                this.config = loadedConfig;
+        if (fs.existsSync(this.#configFilePath)) {
+            const loadedConfig = JSON.parse(fs.readFileSync(this.#configFilePath, 'utf-8'));
+            if (this.#validateConfig(loadedConfig)) {
+                this.#config = loadedConfig;
                 this.log('Configuration loaded successfully.');
             }
             else {
                 console.error('Invalid configuration file. Loading defaults.');
-                this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
+                this.#config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
             }
         }
         else {
-            this.config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
+            this.#config = { paths: [], excludePaths: [], fileTypes: [], fileRegexs: [], useFileTypes: false, useFileRegexs: false, useCeaserCipher: false, useAesKey: false, debug: false, forkDelay: 1, forkExecutionDelay: 1, threads: 1, whiteSpaceOffset: 0, localPathReferences: false, selfTamperProof: false, selfNpmTamperProof: false };
         }
     }
     /**
@@ -200,26 +202,26 @@ class Config {
      */
     saveConfigP() {
         const config = {
-            paths: this.paths,
-            excludePaths: this.excludePaths,
-            fileTypes: this.fileTypes,
-            fileRegexs: this.fileRegexs,
-            useFileTypes: this.useFileTypes,
-            useFileRegexs: this.useFileRegexs,
-            useCeaserCipher: this.useCeaserCipher,
-            useAesKey: this.useAesKey,
-            forkDelay: this.forkDelay,
-            forkExecutionDelay: this.forkExecutionDelay,
-            threads: this.threads,
-            debug: this.debug,
-            whiteSpaceOffset: this.whiteSpaceOffset,
-            localPathReferences: this.localPathReferences,
-            selfTamperProof: this.selfTamperProof,
-            selfNpmTamperProof: this.selfNpmTamperProof,
+            paths: this.#paths,
+            excludePaths: this.#excludePaths,
+            fileTypes: this.#fileTypes,
+            fileRegexs: this.#fileRegexs,
+            useFileTypes: this.#useFileTypes,
+            useFileRegexs: this.#useFileRegexs,
+            useCeaserCipher: this.#useCeaserCipher,
+            useAesKey: this.#useAesKey,
+            forkDelay: this.#forkDelay,
+            forkExecutionDelay: this.#forkExecutionDelay,
+            threads: this.#threads,
+            debug: this.#debug,
+            whiteSpaceOffset: this.#whiteSpaceOffset,
+            localPathReferences: this.#localPathReferences,
+            selfTamperProof: this.#selfTamperProof,
+            selfNpmTamperProof: this.#selfNpmTamperProof,
         };
-        if (this.validateConfig(config)) {
-            this.config = config;
-            this.saveConfig();
+        if (this.#validateConfig(config)) {
+            this.#config = config;
+            this.#saveConfig();
         }
         else {
             console.error('Invalid configuration. Save aborted.');
@@ -230,9 +232,11 @@ class Config {
      * @param path - The path to add.
      */
     addPath(path) {
-        if (!this.config.paths.includes(path)) {
-            this.config.paths.push(path);
-            this.saveConfig();
+        if (this.#configLock)
+            return;
+        if (!this.#config.paths.includes(path)) {
+            this.#config.paths.push(path);
+            this.#saveConfig();
             this.log(`Path ${path} added to configuration.`);
         }
     }
@@ -241,10 +245,12 @@ class Config {
      * @param path - The path to remove.
      */
     removePath(path) {
-        const index = this.config.paths.indexOf(path);
+        if (this.#configLock)
+            return;
+        const index = this.#config.paths.indexOf(path);
         if (index > -1) {
-            this.config.paths.splice(index, 1);
-            this.saveConfig();
+            this.#config.paths.splice(index, 1);
+            this.#saveConfig();
             this.log(`Path ${path} removed from configuration.`);
         }
     }
@@ -253,9 +259,11 @@ class Config {
      * @param path - The exclude path to add.
      */
     addExcludePath(path) {
-        if (!this.config.excludePaths.includes(path)) {
-            this.config.excludePaths.push(path);
-            this.saveConfig();
+        if (this.#configLock)
+            return;
+        if (!this.#config.excludePaths.includes(path)) {
+            this.#config.excludePaths.push(path);
+            this.#saveConfig();
             this.log(`Exclude path ${path} added to configuration.`);
         }
     }
@@ -264,10 +272,12 @@ class Config {
      * @param path - The exclude path to remove.
      */
     removeExcludePath(path) {
-        const index = this.config.excludePaths.indexOf(path);
+        if (this.#configLock)
+            return;
+        const index = this.#config.excludePaths.indexOf(path);
         if (index > -1) {
-            this.config.excludePaths.splice(index, 1);
-            this.saveConfig();
+            this.#config.excludePaths.splice(index, 1);
+            this.#saveConfig();
             this.log(`Exclude path ${path} removed from configuration.`);
         }
     }
@@ -276,9 +286,11 @@ class Config {
      * @param fileType - The file type to add.
      */
     addFileType(fileType) {
-        if (!this.config.fileTypes.includes(fileType)) {
-            this.config.fileTypes.push(fileType);
-            this.saveConfig();
+        if (this.#configLock)
+            return;
+        if (!this.#config.fileTypes.includes(fileType)) {
+            this.#config.fileTypes.push(fileType);
+            this.#saveConfig();
             this.log(`File type ${fileType} added to configuration.`);
         }
     }
@@ -287,10 +299,12 @@ class Config {
      * @param fileType - The file type to remove.
      */
     removeFileType(fileType) {
-        const index = this.config.fileTypes.indexOf(fileType);
+        if (this.#configLock)
+            return;
+        const index = this.#config.fileTypes.indexOf(fileType);
         if (index > -1) {
-            this.config.fileTypes.splice(index, 1);
-            this.saveConfig();
+            this.#config.fileTypes.splice(index, 1);
+            this.#saveConfig();
             this.log(`File type ${fileType} removed from configuration.`);
         }
     }
@@ -299,9 +313,11 @@ class Config {
      * @param regex - The file regex to add.
      */
     addFileRegex(regex) {
-        if (!this.config.fileRegexs.includes(regex)) {
-            this.config.fileRegexs.push(regex);
-            this.saveConfig();
+        if (this.#configLock)
+            return;
+        if (!this.#config.fileRegexs.includes(regex)) {
+            this.#config.fileRegexs.push(regex);
+            this.#saveConfig();
             this.log(`File regex ${regex} added to configuration.`);
         }
     }
@@ -310,12 +326,24 @@ class Config {
      * @param regex - The file regex to remove.
      */
     removeFileRegex(regex) {
-        const index = this.config.fileRegexs.indexOf(regex);
+        if (this.#configLock)
+            return;
+        const index = this.#config.fileRegexs.indexOf(regex);
         if (index > -1) {
-            this.config.fileRegexs.splice(index, 1);
-            this.saveConfig();
+            this.#config.fileRegexs.splice(index, 1);
+            this.#saveConfig();
             this.log(`File regex ${regex} removed from configuration.`);
         }
+    }
+    getConfig() {
+        //Memory safe proper export of configuration incase they want to runtime lock the config file!
+        //Exports a duplicate! in runtime config lock mode!
+        if (this.#configLock) {
+            //Due to the nature of JSON parsing and stringifying we can make a deep copy of the object to return!
+            const config = JSON.parse(JSON.stringify(this.#config));
+            return config;
+        }
+        return this.#config;
     }
 }
 exports.Config = Config;

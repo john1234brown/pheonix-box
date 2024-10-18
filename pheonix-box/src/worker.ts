@@ -1,38 +1,14 @@
 /************************************************************************************************************************
  * Author: Johnathan Edward Brown                                                                                       *
  * Purpose: Worker class for the PheonixBox Class Object for the CLI Pheonix application.                               *
- * Last Modified: 2024-10-15                                                                                            *
+ * Last Modified: 2024-10-18                                                                                            *
  * License: X11 License                                                                                                 *
  * Version: 1.0.2                                                                                                       *
  ************************************************************************************************************************/
+import { Config, iConfig } from './config';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 import * as path from 'path';
-
-/**
- * Configuration interface for the Pheonix Box CLI worker.
- * 
- * @interface Config
- * 
- * @property {boolean} debug - Indicates whether debugging is enabled.
- * @property {boolean} useAesKey - Specifies if AES key encryption should be used.
- * @property {boolean} useCeaserCipher - Specifies if Caesar cipher encryption should be used.
- * @property {boolean} [useFileTypes] - Optional flag to determine if specific file types should be used.
- * @property {string[]} [fileTypes] - Optional array of file types to include.
- * @property {boolean} [useFileRegexs] - Optional flag to determine if file regex patterns should be used.
- * @property {string[]} [fileRegexs] - Optional array of regex patterns for file matching.
- * @property {string[]} [excludePaths] - Optional array of paths to exclude.
- */
-interface Config {
-    debug: boolean;
-    useAesKey: boolean;
-    useCeaserCipher: boolean;
-    useFileTypes?: boolean;
-    fileTypes?: string[];
-    useFileRegexs?: boolean;
-    fileRegexs?: string[];
-    excludePaths?: string[];
-}
 
 /**
  * Represents a collection of file hashes where the key is the file path
@@ -86,22 +62,22 @@ interface FileContents {
  * @method terminate - Terminates the worker process.
  */
 class JohnsWorker {
-    private config: Config;
-    private fileHashes: FileHashes;
-    private fileContents: FileContents;
-    private cipherKey: string;
-    private shuffledKey: string;
-    private aesKey: Buffer;
-    private loaded: boolean;
+    #config: iConfig;
+    #fileHashes: FileHashes;
+    #fileContents: FileContents;
+    #cipherKey: string;
+    #shuffledKey: string;
+    #aesKey: Buffer;
+    #loaded: boolean;
 
     constructor(config: Config, fileList: string[], chunks: any, cipherKey: string, shuffledKey: string, aesKey: Buffer, loaded: boolean, fileHashes?: FileHashes, fileContents?: FileContents) {
-        this.config = config;
-        this.loaded = loaded;
-        this.fileHashes = fileHashes || {};
-        this.fileContents = fileContents || {};
-        this.cipherKey = cipherKey;
-        this.shuffledKey = shuffledKey;
-        this.aesKey = aesKey;
+        this.#config = config.getConfig();
+        this.#loaded = loaded;
+        this.#fileHashes = fileHashes || {};
+        this.#fileContents = fileContents || {};
+        this.#cipherKey = cipherKey;
+        this.#shuffledKey = shuffledKey;
+        this.#aesKey = aesKey;
         this.processFiles(fileList, chunks);
     }
 
@@ -111,7 +87,7 @@ class JohnsWorker {
      * @param {...any[]} args - The messages or objects to log.
      */
     private log(...args: any[]) {
-        if (this.config.debug) {
+        if (this.#config.debug) {
             console.log(...args);
         }
     }
@@ -127,19 +103,19 @@ class JohnsWorker {
      * - If AES encryption is enabled and an AES key is provided, the method further encrypts the result using AES-256-CBC.
      * - Logs the encryption process at various stages.
      */
-    private encrypt(text: string): string {
+    #encrypt(text: string): string {
         this.log('Encrypting text...');
         const caesarEncrypted = text.split('').map(char => {
-            const index = this.cipherKey.indexOf(char);
+            const index = this.#cipherKey.indexOf(char);
             if (index === -1) {
                 return char;
             }
-            return this.shuffledKey[index];
+            return this.#shuffledKey[index];
         }).join('');
 
-        if (this.config.useAesKey && this.aesKey) {
+        if (this.#config.useAesKey && this.#aesKey) {
             const iv = crypto.randomBytes(16); // Initialization vector
-            const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(this.aesKey), iv);
+            const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(this.#aesKey), iv);
             let encrypted = cipher.update(caesarEncrypted, 'utf8', 'hex');
             encrypted += cipher.final('hex');
             const encryptedWithIv = iv.toString('hex') + ':' + encrypted;
@@ -164,11 +140,11 @@ class JohnsWorker {
      * 3. Using a Caesar cipher to further decrypt the text.
      * 4. Logging the decrypted text after applying the Caesar cipher.
      */
-    private decrypt(text: string): string {
+    #decrypt(text: string): string {
         this.log('Decrypting text...');
         let decrypted = text;
     
-        if (this.config.useAesKey && this.aesKey) {
+        if (this.#config.useAesKey && this.#aesKey) {
             const textParts = text.split(':');
             if (textParts.length < 2) {
                 throw new Error('Invalid encrypted text format');
@@ -180,18 +156,18 @@ class JohnsWorker {
             }
     
             const encryptedText = textParts.join(':');
-            const key = this.config.useCeaserCipher ? Buffer.from(this.aesKey) : this.aesKey;  
+            const key = this.#config.useCeaserCipher ? Buffer.from(this.#aesKey) : this.#aesKey;  
             const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
             decrypted = decipher.update(encryptedText, 'hex', 'utf8');
             decrypted += decipher.final('utf8');
         }
     
         const caesarDecrypted = decrypted.split('').map(char => {
-            const index = this.shuffledKey.indexOf(char);
+            const index = this.#shuffledKey.indexOf(char);
             if (index === -1) {
                 return char;
             }
-            return this.cipherKey[index];
+            return this.#cipherKey[index];
         }).join('');
     
         this.log('Decrypted text with Caesar cipher:', caesarDecrypted);
@@ -211,11 +187,11 @@ class JohnsWorker {
             try {
                 this.log('Processing files...');
                 fileList.forEach(filePath => {
-                    this.processFile(filePath, chunks);
+                    this.#processFile(filePath);
                 });
                 resolve({
-                    fileHashes: this.fileHashes,
-                    fileContents: this.fileContents
+                    fileHashes: this.#fileHashes,
+                    fileContents: this.#fileContents
                 });
             } catch (error) {
                 reject(error);
@@ -229,26 +205,25 @@ class JohnsWorker {
      * with the stored content. The file hash and content can be encrypted/decrypted based on the configuration.
      *
      * @param filePath - The path of the file to process.
-     * @param chunks - Additional data or chunks related to the file processing (not used in the current implementation).
      */
-    private processFile(filePath: string, chunks: any) {
+    #processFile(filePath: string) {
         this.log('Processing file:', filePath);
-        if (this.shouldProcessFile(filePath)) {
+        if (this.#shouldProcessFile(filePath)) {
             const fileContent = fs.readFileSync(filePath, 'utf-8');
             const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
-            if (this.fileHashes[filePath] !== undefined && this.fileContents[filePath] !== undefined) {
-                const storedHash = this.config.useCeaserCipher ? this.decrypt(this.fileHashes[filePath]) : this.fileHashes[filePath];
-                const storedContent = this.config.useCeaserCipher ? this.decrypt(this.fileContents[filePath]) : this.fileContents[filePath];
+            if (this.#fileHashes[filePath] !== undefined && this.#fileContents[filePath] !== undefined) {
+                const storedHash = this.#config.useCeaserCipher ? this.#decrypt(this.#fileHashes[filePath]) : this.#fileHashes[filePath];
+                const storedContent = this.#config.useCeaserCipher ? this.#decrypt(this.#fileContents[filePath]) : this.#fileContents[filePath];
                 if (!storedHash) {
-                    this.fileHashes[filePath] = this.config.useCeaserCipher ? this.encrypt(fileHash) : fileHash;
-                    this.fileContents[filePath] = this.config.useCeaserCipher ? this.encrypt(fileContent) : fileContent;
+                    this.#fileHashes[filePath] = this.#config.useCeaserCipher ? this.#encrypt(fileHash) : fileHash;
+                    this.#fileContents[filePath] = this.#config.useCeaserCipher ? this.#encrypt(fileContent) : fileContent;
                 } else if (storedHash !== fileHash) {
                     this.log(`File hash mismatch for ${filePath}. Replacing content with stored content. , ${storedContent} \n, ${fileContent}`);
                     fs.writeFileSync(filePath, storedContent, 'utf-8');
                 }
             }else{
-                this.fileHashes[filePath] = this.config.useCeaserCipher ? this.encrypt(fileHash) : fileHash;
-                this.fileContents[filePath] = this.config.useCeaserCipher ? this.encrypt(fileContent) : fileContent;
+                this.#fileHashes[filePath] = this.#config.useCeaserCipher ? this.#encrypt(fileHash) : fileHash;
+                this.#fileContents[filePath] = this.#config.useCeaserCipher ? this.#encrypt(fileContent) : fileContent;
             }
         }
     }
@@ -265,24 +240,23 @@ class JohnsWorker {
      * - If `useFileTypes` is enabled, checks if the file extension is included in the `fileTypes` configuration.
      * - If `useFileRegexs` is enabled, checks if the file name matches any of the regular expressions in the `fileRegexs` configuration.
      */
-    private shouldProcessFile(filePath: string): boolean {
+    #shouldProcessFile(filePath: string): boolean {
         this.log('Checking if file should be processed:', filePath);
-
-        if (this.config.excludePaths?.some(excludePath => filePath.startsWith(excludePath))) {
+        if (this.#config.excludePaths?.some((excludePath: string) => filePath.startsWith(excludePath))) {
             this.log(`File ${filePath} is excluded from processing.`);
             return false;
         }
 
-        if (this.config.useFileTypes) {
+        if (this.#config.useFileTypes) {
             const fileExtension = path.extname(filePath);
-            if (!this.config.fileTypes?.includes(fileExtension)) {
+            if (!this.#config.fileTypes?.includes(fileExtension)) {
                 return false;
             }
         }
 
-        if (this.config.useFileRegexs) {
+        if (this.#config.useFileRegexs) {
             const fileName = path.basename(filePath);
-            if (!this.config.fileRegexs?.some(regex => new RegExp(regex).test(fileName))) {
+            if (!this.#config.fileRegexs?.some((regex: string | RegExp) => new RegExp(regex).test(fileName))) {
                 return false;
             }
         }

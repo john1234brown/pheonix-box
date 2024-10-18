@@ -1,6 +1,6 @@
 {
   "name": "pheonix-box",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": {
     "name": "Johnathan Edward Brown",
     "email": "sierrajohn1234brown@gmail.com",
@@ -15,16 +15,34 @@
     "url": "git+https://github.com/john1234brown/pheonix-box.git"
   },
   "description": "This is a Typescript Project and NPM Module Along with exported access to the JohnsPheonixBox class object. For usage in NodeJS runtime!",
-  "main": "dist/main.js",
+  "main": "production/pheonix-box.js",
+  "types": "types/main.d.ts",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./production/pheonix-box.d.ts",
+        "default": "./production/pheonix-box.js"
+      },
+      "import": {
+        "types": "./production/pheonix-box.mjs.d.ts",
+        "default": "./production/pheonix-box.mjs"
+      }
+    }
+  },
+  "type": "module",
   "scripts": {
     "build": "tsc",
-    "bundle": "rollup -c"
+    "build:mjs": "tsc --project tsconfig.mjs.json",
+    "bundle": "rollup -c",
+    "compile": "npm run build && npm run build:mjs && npm run bundle"
   },
+  "license": "X11",
   "devDependencies": {
-    "ts-loader": "^9.5.1"
-  },
-  "dependencies": {
-    "typescript": "^5.6.2"
-  },
-  "license": "X11"
+    "@rollup/plugin-commonjs": "^28.0.1",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@types/node": "^22.7.6",
+    "rollup": "^4.24.0",
+    "rollup-plugin-dts": "^6.1.1",
+    "typescript": "^5.6.3"
+  }
 }

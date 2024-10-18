@@ -19,20 +19,4 @@ export default [
     },
     plugins: [dts()],
   },
-  {
-    input: './dist/mjs/main.js',
-    output: {
-      file: './production/pheonix-box.mjs',
-      format: 'es',
-    },
-    plugins: [resolve(), commonjs()],
-  },
-  {
-    input: './types/mjs/main.d.ts',
-    output: {
-      file: './production/pheonix-box.mjs.d.ts',
-      format: 'es',
-    },
-    plugins: [dts()],
-  },
 ];

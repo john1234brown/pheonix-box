@@ -33,7 +33,7 @@ To start using the Pheonix Box NPM Module, you can use the following commands in
 - Start the Pheonix process:
     ```js
     const pheonix = new PheonixBox();
-    pheonix.start();
+    pheonix.startProcess();
     ```
 
 - Display help:
@@ -64,7 +64,7 @@ To secure a binary using the Pheonix Box NPM Module, follow these steps:
 
 1. Add the binary's directory to the configuration:
     ```js
-    pheonix.config.addPath('/path/to/binary');
+    pheonix.config.addPath(path.join(process.cwd(), __filename));
     ```
 
 2. Enable encryption and hashing:
@@ -75,7 +75,7 @@ To secure a binary using the Pheonix Box NPM Module, follow these steps:
 
 3. Start the Pheonix process to secure the binary:
     ```js
-    pheonix.start();
+    pheonix.startProcess();
     ```
 
 ## Securing the Root Folder Space
@@ -99,7 +99,7 @@ To secure the root folder space specifically for securing the OS level binaries 
 
 4. Start the Pheonix process to secure the root folder space:
     ```js
-    pheonix.start();
+    pheonix.startProcess();
     ```
 
 **Note:** Be cautious when securing the root folder space as it may affect system files and operations.
